@@ -1,6 +1,6 @@
-# Welcome to your Expo app 👋
+# Moments
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Send each other a photo or a short note; it shows up instantly in the app and on your partner's Android home screen widget.
 
 ## Get started
 
@@ -10,11 +10,33 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Copy `.env.example` to `.env` and fill in your Supabase project URL + anon key (already set for this repo's project).
+
+3. Start the app
 
    ```bash
    npx expo start
    ```
+
+   The app uses `expo-dev-client` (needed for `react-native-android-widget`'s native module), so it will **not** run in Expo Go. Build a development client first:
+
+   ```bash
+   npx expo run:android
+   ```
+
+   or, without a local Android SDK:
+
+   ```bash
+   eas build --profile development --platform android
+   ```
+
+## Testing the widget
+
+1. Build and install the dev client on two Android devices/emulators (or one device + one emulator) with two different accounts.
+2. Pair them via Send tab's invite flow (Create invite → share code/link → other device joins).
+3. Long-press the home screen → Widgets → "Moments" → add the `MomentWidget`.
+4. Send a photo/note from one device; the widget on the other device updates via push notification (foreground/background) within a few seconds, or via the periodic 30-minute OS refresh as a fallback.
+5. Backgrounding/killing the receiving app and re-sending verifies the background push → widget sync path (`src/lib/background-notifications.ts`).
 
 In the output, you'll find options to open the app in a
 
