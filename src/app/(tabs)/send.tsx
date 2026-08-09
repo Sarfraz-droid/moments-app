@@ -7,12 +7,12 @@ import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/brand-header';
-import { InAppCamera } from '@/components/in-app-camera';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
+import { setCameraCaptureHandler } from '@/lib/camera-bridge';
 import { supabase } from '@/lib/supabase';
 import { uploadMomentPhoto } from '@/lib/storage';
 import { syncLatestMomentToWidget } from '@/lib/widget-cache';
@@ -20,7 +20,6 @@ import { syncLatestMomentToWidget } from '@/lib/widget-cache';
 export default function SendScreen() {
   const { session, pair, partnerProfile } = useAuth();
   const theme = useTheme();
-  const [showCamera, setShowCamera] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
@@ -90,17 +89,12 @@ export default function SendScreen() {
     }
   }
 
-  if (showCamera) {
-    return (
-      <InAppCamera
-        onCapture={(uri) => {
-          setPhotoUri(uri);
-          setNote('');
-          setShowCamera(false);
-        }}
-        onCancel={() => setShowCamera(false)}
-      />
-    );
+  function openCamera() {
+    setCameraCaptureHandler((uri) => {
+      setPhotoUri(uri);
+      setNote('');
+    });
+    router.push('/camera');
   }
 
   return (
@@ -128,7 +122,7 @@ export default function SendScreen() {
         ) : (
           <>
             <Pressable
-              onPress={() => setShowCamera(true)}
+              onPress={openCamera}
               style={[styles.button, { backgroundColor: theme.text }]}>
               <ThemedText style={{ color: theme.background }} type="smallBold">
                 📷 Take photo
