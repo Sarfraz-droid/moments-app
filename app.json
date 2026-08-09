@@ -18,7 +18,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -40,6 +43,14 @@
         {
           "photosPermission": "Partner ko photo bhejne ke liye gallery access chahiye.",
           "cameraPermission": "Partner ko photo bhejne ke liye camera access chahiye."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Partner ko photo bhejne ke liye camera access chahiye.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -72,6 +83,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b7b37943-fd5c-425d-bac0-728fbe8eb90c"
+      }
     }
   }
 }

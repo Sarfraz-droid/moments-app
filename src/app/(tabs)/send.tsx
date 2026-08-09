@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/brand-header';
+import { InAppCamera } from '@/components/in-app-camera';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -19,26 +20,23 @@ import { syncLatestMomentToWidget } from '@/lib/widget-cache';
 export default function SendScreen() {
   const { session, pair, partnerProfile } = useAuth();
   const theme = useTheme();
+  const [showCamera, setShowCamera] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function pickPhoto(fromCamera: boolean) {
-    const permission = fromCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  async function pickFromGallery() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       setError('Permission chahiye photo ke liye.');
       return;
     }
-    const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] })
-      : await ImagePicker.launchImageLibraryAsync({
-          quality: 0.7,
-          allowsEditing: true,
-          aspect: [1, 1],
-        });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
     if (!result.canceled) {
       setPhotoUri(result.assets[0].uri);
       setNote('');
@@ -92,6 +90,19 @@ export default function SendScreen() {
     }
   }
 
+  if (showCamera) {
+    return (
+      <InAppCamera
+        onCapture={(uri) => {
+          setPhotoUri(uri);
+          setNote('');
+          setShowCamera(false);
+        }}
+        onCancel={() => setShowCamera(false)}
+      />
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -117,14 +128,14 @@ export default function SendScreen() {
         ) : (
           <>
             <Pressable
-              onPress={() => pickPhoto(true)}
+              onPress={() => setShowCamera(true)}
               style={[styles.button, { backgroundColor: theme.text }]}>
               <ThemedText style={{ color: theme.background }} type="smallBold">
                 📷 Take photo
               </ThemedText>
             </Pressable>
             <Pressable
-              onPress={() => pickPhoto(false)}
+              onPress={pickFromGallery}
               style={[styles.buttonOutline, { borderColor: theme.text }]}>
               <ThemedText type="smallBold">Choose from gallery</ThemedText>
             </Pressable>
