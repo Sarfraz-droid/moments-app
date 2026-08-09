@@ -25,12 +25,47 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Partner ko photo bhejne ke liye gallery access chahiye.",
+          "cameraPermission": "Partner ko photo bhejne ke liye camera access chahiye."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-foreground.png",
+          "color": "#208AEF"
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "MomentWidget",
+              "label": "Moments",
+              "minWidth": "160dp",
+              "minHeight": "160dp",
+              "targetCellWidth": 2,
+              "targetCellHeight": 2,
+              "description": "Latest photo or note from your person",
+              "previewImage": "./assets/images/icon.png",
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical",
+              "widgetFeatures": "reconfigurable"
+            }
+          ]
         }
       ]
     ],
