@@ -1,3 +1,7 @@
+// react-native-android-widget renders these as plain functions outside React's
+// tree; the React 19 compiler's auto-memoization breaks that (invalid hook call).
+'use no memo';
+
 import { FlexWidget, ImageWidget, TextWidget } from 'react-native-android-widget';
 
 import type { WidgetMoment } from '@/lib/widget-cache';
