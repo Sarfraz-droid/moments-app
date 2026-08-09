@@ -63,8 +63,7 @@
               "description": "Latest photo or note from your person",
               "previewImage": "./assets/images/icon.png",
               "updatePeriodMillis": 1800000,
-              "resizeMode": "horizontal|vertical",
-              "widgetFeatures": "reconfigurable"
+              "resizeMode": "horizontal|vertical"
             }
           ]
         }
