@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandHeader } from '@/components/brand-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -16,7 +17,7 @@ import { uploadMomentPhoto } from '@/lib/storage';
 import { syncLatestMomentToWidget } from '@/lib/widget-cache';
 
 export default function SendScreen() {
-  const { session, pair } = useAuth();
+  const { session, pair, partnerProfile } = useAuth();
   const theme = useTheme();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [note, setNote] = useState('');
@@ -94,9 +95,9 @@ export default function SendScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="title" style={styles.title}>
-          Kuch bhejo 💌
-        </ThemedText>
+        <BrandHeader
+          subtitle={partnerProfile ? `Send to ${partnerProfile.display_name}` : undefined}
+        />
 
         {photoUri ? (
           <>
@@ -175,7 +176,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
   },
-  title: { fontSize: 28 },
   preview: { width: '100%', aspectRatio: 1, borderRadius: Spacing.three },
   button: { borderRadius: Spacing.five, paddingVertical: Spacing.three, alignItems: 'center' },
   buttonOutline: {
