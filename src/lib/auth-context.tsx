@@ -11,6 +11,7 @@ type AuthContextValue = {
   session: Session | null;
   profile: Profile | null;
   pair: Pair | null;
+  partnerProfile: Profile | null;
   setDisplayName: (name: string) => Promise<void>;
   createPair: () => Promise<Pair>;
   joinPair: (inviteCode: string) => Promise<Pair>;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [pair, setPair] = useState<Pair | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
 
   const loadProfile = useCallback(async (userId: string) => {
     const { data: existing } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -90,6 +92,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.setItem(WIDGET_PAIR_ID_KEY, pair.id).catch(() => {});
     }
   }, [pair]);
+
+  useEffect(() => {
+    if (!pair || pair.status !== 'active' || !session) {
+      setPartnerProfile(null);
+      return;
+    }
+    const partnerId = pair.user_a === session.user.id ? pair.user_b : pair.user_a;
+    if (!partnerId) {
+      setPartnerProfile(null);
+      return;
+    }
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', partnerId)
+      .maybeSingle()
+      .then(({ data }) => setPartnerProfile((data as Profile) ?? null));
+  }, [pair, session]);
 
   useEffect(() => {
     if (!pair || pair.status === 'active') return;
@@ -156,8 +176,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session, loadPair]);
 
   const value = useMemo(
-    () => ({ loading, session, profile, pair, setDisplayName, createPair, joinPair, refreshPair }),
-    [loading, session, profile, pair, setDisplayName, createPair, joinPair, refreshPair]
+    () => ({
+      loading,
+      session,
+      profile,
+      pair,
+      partnerProfile,
+      setDisplayName,
+      createPair,
+      joinPair,
+      refreshPair,
+    }),
+    [loading, session, profile, pair, partnerProfile, setDisplayName, createPair, joinPair, refreshPair]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

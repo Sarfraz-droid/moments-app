@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandHeader } from '@/components/brand-header';
+import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
@@ -51,7 +53,7 @@ function MomentCard({ moment, isMe }: { moment: Moment; isMe: boolean }) {
 }
 
 export default function FeedScreen() {
-  const { session, pair } = useAuth();
+  const { session, pair, partnerProfile } = useAuth();
   const { moments, loading, refresh } = useMoments(pair?.id);
 
   return (
@@ -64,15 +66,18 @@ export default function FeedScreen() {
           onRefresh={refresh}
           refreshing={loading}
           ListHeaderComponent={
-            <ThemedText type="title" style={styles.header}>
-              Moments 💛
-            </ThemedText>
+            <BrandHeader
+              subtitle={partnerProfile ? `with ${partnerProfile.display_name}` : undefined}
+            />
           }
           ListEmptyComponent={
             !loading ? (
-              <ThemedText themeColor="textSecondary" style={styles.empty}>
-                Koi photo/note nahi abhi. Send tab se bhejo!
-              </ThemedText>
+              <ThemedView style={styles.emptyState}>
+                <Logo size={56} />
+                <ThemedText themeColor="textSecondary" style={styles.empty}>
+                  Koi photo/note nahi abhi.{'\n'}Send tab se pehla moment bhejo!
+                </ThemedText>
+              </ThemedView>
             ) : null
           }
           renderItem={({ item }) => (
@@ -94,8 +99,8 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
   },
   listContent: { padding: Spacing.three, gap: Spacing.three },
-  header: { fontSize: 28, marginBottom: Spacing.two },
-  empty: { textAlign: 'center', marginTop: Spacing.six },
+  emptyState: { alignItems: 'center', gap: Spacing.three, marginTop: Spacing.six },
+  empty: { textAlign: 'center' },
   card: { borderRadius: Spacing.three, padding: Spacing.two, gap: Spacing.two },
   photo: { width: '100%', aspectRatio: 1, borderRadius: Spacing.two },
   photoLoading: { backgroundColor: '#00000022' },

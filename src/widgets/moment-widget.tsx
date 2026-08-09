@@ -4,6 +4,7 @@
 
 import { FlexWidget, ImageWidget, TextWidget } from 'react-native-android-widget';
 
+import { Brand } from '@/constants/theme';
 import type { WidgetMoment } from '@/lib/widget-cache';
 
 function timeAgo(iso: string) {
@@ -23,13 +24,13 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
         style={{
           height: 'match_parent',
           width: 'match_parent',
-          backgroundColor: '#208AEF',
+          backgroundColor: Brand.gradientStart,
           borderRadius: 20,
           alignItems: 'center',
           justifyContent: 'center',
           padding: 12,
         }}>
-        <TextWidget text="Koi moment nahi abhi 💛" style={{ fontSize: 14, color: '#FFFFFF' }} />
+        <TextWidget text="Unka koi moment nahi abhi 💛" style={{ fontSize: 14, color: '#FFFFFF' }} />
       </FlexWidget>
     );
   }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, Share, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -57,6 +58,9 @@ export default function PairScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
+          <ThemedView style={styles.logoWrap}>
+            <Logo size={64} />
+          </ThemedView>
           <ThemedText type="title" style={styles.title}>
             Waiting for them…
           </ThemedText>
@@ -82,6 +86,9 @@ export default function PairScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <ThemedView style={styles.logoWrap}>
+          <Logo size={64} />
+        </ThemedView>
         <ThemedText type="title" style={styles.title}>
           Connect with{'\n'}your person 💛
         </ThemedText>
@@ -130,6 +137,7 @@ export default function PairScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1, padding: Spacing.four, justifyContent: 'center', gap: Spacing.three },
+  logoWrap: { alignItems: 'center', marginBottom: Spacing.two },
   title: { fontSize: 32, lineHeight: 38 },
   input: {
     borderRadius: Spacing.three,

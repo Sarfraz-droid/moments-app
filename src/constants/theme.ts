@@ -26,6 +26,13 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+// Warm gradient used for the app's logo mark and other brand accents,
+// distinct from the neutral light/dark UI palette above.
+export const Brand = {
+  gradientStart: '#FF7A6E',
+  gradientEnd: '#FFB454',
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

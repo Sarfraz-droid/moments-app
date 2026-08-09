@@ -25,17 +25,39 @@ export async function readLatestMomentForWidget(): Promise<WidgetMoment | null> 
   return raw ? (JSON.parse(raw) as WidgetMoment) : null;
 }
 
-/** Fetches the newest moment for a pair, caches its photo locally, and updates
- * the widget's AsyncStorage snapshot + triggers a widget redraw (Android only). */
+async function clearWidget() {
+  await AsyncStorage.removeItem(KEY);
+  if (Platform.OS === 'android') {
+    const { requestWidgetUpdate } = await import('react-native-android-widget');
+    const { MomentWidget } = await import('@/widgets/moment-widget');
+    await requestWidgetUpdate({
+      widgetName: 'MomentWidget',
+      renderWidget: () => <MomentWidget moment={null} />,
+    });
+  }
+}
+
+/** Fetches the newest moment your *partner* sent for a pair (never your own —
+ * the widget is meant to surface what they shared with you), caches its photo
+ * locally, and updates the widget's AsyncStorage snapshot + redraws it (Android only). */
 export async function syncLatestMomentToWidget(pairId: string) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
   const { data: moment } = await supabase
     .from('moments')
     .select('type, text, storage_path, created_at, sender_id')
     .eq('pair_id', pairId)
+    .neq('sender_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!moment) return;
+  if (!moment) {
+    await clearWidget();
+    return;
+  }
 
   const { data: sender } = await supabase
     .from('profiles')
