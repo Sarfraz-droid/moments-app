@@ -87,7 +87,7 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
           style={{ fontSize: 11, color: '#FFFFFFCC' }}
         />
         <FlexWidget style={{ flexDirection: 'row', flexGap: 4, marginTop: 4 }}>
-          {moment.reactions.map((r) => (
+          {(moment.reactions ?? []).map((r) => (
             <FlexWidget
               key={r.emoji}
               clickAction={r.emoji}
