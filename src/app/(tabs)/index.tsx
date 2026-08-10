@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/brand-header';
@@ -8,10 +8,14 @@ import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useMoments } from '@/hooks/use-moments';
+import { useReactions } from '@/hooks/use-reactions';
 import { useAuth } from '@/lib/auth-context';
 import { getMomentPhotoUrl } from '@/lib/storage';
-import type { Moment } from '@/lib/types';
+import type { Moment, MomentReaction } from '@/lib/types';
+
+const REACTION_EMOJIS = ['💛', '😂', '😮', '😢', '🔥'];
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -23,11 +27,57 @@ function timeAgo(iso: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function MomentCard({ moment, isMe }: { moment: Moment; isMe: boolean }) {
+function ReactionBar({
+  reactions,
+  userId,
+  onToggle,
+}: {
+  reactions: MomentReaction[];
+  userId: string | undefined;
+  onToggle: (emoji: string) => void;
+}) {
+  const theme = useTheme();
+  return (
+    <View style={styles.reactionRow}>
+      {REACTION_EMOJIS.map((emoji) => {
+        const forEmoji = reactions.filter((r) => r.emoji === emoji);
+        const mine = forEmoji.some((r) => r.user_id === userId);
+        return (
+          <Pressable
+            key={emoji}
+            onPress={() => onToggle(emoji)}
+            style={[
+              styles.reactionPill,
+              { backgroundColor: mine ? theme.backgroundSelected : 'transparent' },
+            ]}>
+            <ThemedText type="small">
+              {emoji}
+              {forEmoji.length > 0 ? ` ${forEmoji.length}` : ''}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function MomentCard({
+  moment,
+  isMe,
+  userId,
+  reactions,
+  onToggleReaction,
+}: {
+  moment: Moment;
+  isMe: boolean;
+  userId: string | undefined;
+  reactions: MomentReaction[];
+  onToggleReaction: (momentId: string, emoji: string) => void;
+}) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (moment.type === 'photo' && moment.storage_path) {
+    if (moment.storage_path) {
       getMomentPhotoUrl(moment.storage_path)
         .then(setUrl)
         .catch(() => setUrl(null));
@@ -36,18 +86,26 @@ function MomentCard({ moment, isMe }: { moment: Moment; isMe: boolean }) {
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>
-      {moment.type === 'photo' ? (
+      {moment.storage_path ? (
         url ? (
           <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
         ) : (
           <ThemedView style={[styles.photo, styles.photoLoading]} />
         )
-      ) : (
-        <ThemedText style={styles.noteText}>{moment.text}</ThemedText>
-      )}
+      ) : null}
+      {moment.text ? (
+        <ThemedText style={moment.storage_path ? styles.captionText : styles.noteText}>
+          {moment.text}
+        </ThemedText>
+      ) : null}
       <ThemedText type="small" themeColor="textSecondary" style={styles.meta}>
         {isMe ? 'You' : 'Them'} · {timeAgo(moment.created_at)}
       </ThemedText>
+      <ReactionBar
+        reactions={reactions}
+        userId={userId}
+        onToggle={(emoji) => onToggleReaction(moment.id, emoji)}
+      />
     </ThemedView>
   );
 }
@@ -55,6 +113,7 @@ function MomentCard({ moment, isMe }: { moment: Moment; isMe: boolean }) {
 export default function FeedScreen() {
   const { session, pair, partnerProfile } = useAuth();
   const { moments, loading, refresh } = useMoments(pair?.id);
+  const { reactions, react } = useReactions(pair?.id);
 
   return (
     <ThemedView style={styles.container}>
@@ -81,7 +140,15 @@ export default function FeedScreen() {
             ) : null
           }
           renderItem={({ item }) => (
-            <MomentCard moment={item} isMe={item.sender_id === session?.user.id} />
+            <MomentCard
+              moment={item}
+              isMe={item.sender_id === session?.user.id}
+              userId={session?.user.id}
+              reactions={reactions.filter((r) => r.moment_id === item.id)}
+              onToggleReaction={(momentId, emoji) => {
+                if (session) react(momentId, session.user.id, emoji);
+              }}
+            />
           )}
         />
       </SafeAreaView>
@@ -105,5 +172,12 @@ const styles = StyleSheet.create({
   photo: { width: '100%', aspectRatio: 1, borderRadius: Spacing.two },
   photoLoading: { backgroundColor: '#00000022' },
   noteText: { fontSize: 20, padding: Spacing.three },
+  captionText: { fontSize: 15, paddingHorizontal: Spacing.one },
   meta: { paddingHorizontal: Spacing.one },
+  reactionRow: { flexDirection: 'row', gap: Spacing.one },
+  reactionPill: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: Spacing.four,
+  },
 });

@@ -23,3 +23,12 @@ export type Moment = {
   text: string | null;
   created_at: string;
 };
+
+export type MomentReaction = {
+  id: string;
+  moment_id: string;
+  pair_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+};

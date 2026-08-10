@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase';
 import { getMomentPhotoUrl } from '@/lib/storage';
 
 export type WidgetMoment = {
-  type: 'photo' | 'note';
   text: string | null;
   // https signed URL (ImageWidget only accepts http(s)/data URIs, not file://)
   photoUri: string | null;
@@ -48,7 +47,7 @@ export async function syncLatestMomentToWidget(pairId: string) {
 
   const { data: moment } = await supabase
     .from('moments')
-    .select('type, text, storage_path, created_at, sender_id')
+    .select('text, storage_path, created_at, sender_id')
     .eq('pair_id', pairId)
     .neq('sender_id', user.id)
     .order('created_at', { ascending: false })
@@ -66,12 +65,11 @@ export async function syncLatestMomentToWidget(pairId: string) {
     .maybeSingle();
 
   let photoUri: string | null = null;
-  if (moment.type === 'photo' && moment.storage_path) {
+  if (moment.storage_path) {
     photoUri = await getMomentPhotoUrl(moment.storage_path);
   }
 
   await saveLatestMomentForWidget({
-    type: moment.type,
     text: moment.text,
     photoUri,
     senderName: sender?.display_name ?? 'Someone',

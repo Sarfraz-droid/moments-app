@@ -47,7 +47,7 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
         overflow: 'hidden',
       }}>
       <FlexWidget style={{ flex: 1, width: 'match_parent' }}>
-        {moment.type === 'photo' && moment.photoUri ? (
+        {moment.photoUri ? (
           <ImageWidget
             image={moment.photoUri as `https:${string}`}
             imageWidth={300}
@@ -72,10 +72,19 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
           </FlexWidget>
         )}
       </FlexWidget>
-      <FlexWidget style={{ width: 'match_parent', padding: 8, backgroundColor: '#00000099' }}>
+      <FlexWidget
+        style={{
+          width: 'match_parent',
+          padding: 8,
+          backgroundColor: '#00000099',
+          flexDirection: 'column',
+        }}>
+        {moment.photoUri && moment.text ? (
+          <TextWidget text={moment.text} style={{ fontSize: 12, color: '#FFFFFF' }} />
+        ) : null}
         <TextWidget
           text={`${moment.senderName} · ${timeAgo(moment.createdAt)}`}
-          style={{ fontSize: 11, color: '#FFFFFF' }}
+          style={{ fontSize: 11, color: '#FFFFFFCC' }}
         />
       </FlexWidget>
     </FlexWidget>

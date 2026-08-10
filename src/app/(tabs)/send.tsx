@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/brand-header';
@@ -38,64 +38,54 @@ export default function SendScreen() {
     });
     if (!result.canceled) {
       setPhotoUri(result.assets[0].uri);
-      setNote('');
-    }
-  }
-
-  async function sendPhoto() {
-    if (!session || !pair || !photoUri) return;
-    setSending(true);
-    setError(null);
-    try {
-      const momentId = Crypto.randomUUID();
-      const path = await uploadMomentPhoto(pair.id, momentId, photoUri);
-      const { error: insertError } = await supabase.from('moments').insert({
-        id: momentId,
-        pair_id: pair.id,
-        sender_id: session.user.id,
-        type: 'photo',
-        storage_path: path,
-      });
-      if (insertError) throw insertError;
-      setPhotoUri(null);
-      syncLatestMomentToWidget(pair.id).catch(() => {});
-      router.replace('/');
-    } catch {
-      setError('Bhejne me dikkat aayi, dobara try karo.');
-    } finally {
-      setSending(false);
-    }
-  }
-
-  async function sendNote() {
-    if (!session || !pair || !note.trim()) return;
-    setSending(true);
-    setError(null);
-    try {
-      const { error: insertError } = await supabase.from('moments').insert({
-        pair_id: pair.id,
-        sender_id: session.user.id,
-        type: 'note',
-        text: note.trim(),
-      });
-      if (insertError) throw insertError;
-      setNote('');
-      syncLatestMomentToWidget(pair.id).catch(() => {});
-      router.replace('/');
-    } catch {
-      setError('Bhejne me dikkat aayi, dobara try karo.');
-    } finally {
-      setSending(false);
     }
   }
 
   function openCamera() {
-    setCameraCaptureHandler((uri) => {
-      setPhotoUri(uri);
-      setNote('');
-    });
+    setCameraCaptureHandler((uri) => setPhotoUri(uri));
     router.push('/camera');
   }
+
+  async function sendMoment() {
+    const trimmedNote = note.trim();
+    if (!session || !pair || (!photoUri && !trimmedNote)) return;
+    setSending(true);
+    setError(null);
+    try {
+      let storagePath: string | null = null;
+      if (photoUri) {
+        const momentId = Crypto.randomUUID();
+        storagePath = await uploadMomentPhoto(pair.id, momentId, photoUri);
+        const { error: insertError } = await supabase.from('moments').insert({
+          id: momentId,
+          pair_id: pair.id,
+          sender_id: session.user.id,
+          type: 'photo',
+          storage_path: storagePath,
+          text: trimmedNote || null,
+        });
+        if (insertError) throw insertError;
+      } else {
+        const { error: insertError } = await supabase.from('moments').insert({
+          pair_id: pair.id,
+          sender_id: session.user.id,
+          type: 'note',
+          text: trimmedNote,
+        });
+        if (insertError) throw insertError;
+      }
+      setPhotoUri(null);
+      setNote('');
+      syncLatestMomentToWidget(pair.id).catch(() => {});
+      router.replace('/');
+    } catch {
+      setError('Bhejne me dikkat aayi, dobara try karo.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const canSend = Boolean(photoUri || note.trim());
 
   return (
     <ThemedView style={styles.container}>
@@ -104,67 +94,60 @@ export default function SendScreen() {
           subtitle={partnerProfile ? `Send to ${partnerProfile.display_name}` : undefined}
         />
 
-        {photoUri ? (
-          <>
-            <Image source={{ uri: photoUri }} style={styles.preview} contentFit="cover" />
-            <Pressable
-              onPress={sendPhoto}
-              disabled={sending}
-              style={[styles.button, { backgroundColor: theme.text, opacity: sending ? 0.5 : 1 }]}>
-              <ThemedText style={{ color: theme.background }} type="smallBold">
-                {sending ? 'Sending…' : 'Send photo'}
-              </ThemedText>
-            </Pressable>
-            <Pressable onPress={() => setPhotoUri(null)} style={styles.buttonOutline}>
-              <ThemedText type="smallBold">Cancel</ThemedText>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <Pressable
-              onPress={openCamera}
-              style={[styles.button, { backgroundColor: theme.text }]}>
-              <ThemedText style={{ color: theme.background }} type="smallBold">
-                📷 Take photo
-              </ThemedText>
-            </Pressable>
-            <Pressable
-              onPress={pickFromGallery}
-              style={[styles.buttonOutline, { borderColor: theme.text }]}>
-              <ThemedText type="smallBold">Choose from gallery</ThemedText>
-            </Pressable>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          {photoUri ? (
+            <ThemedView style={styles.previewWrap}>
+              <Image source={{ uri: photoUri }} style={styles.preview} contentFit="cover" />
+              <Pressable
+                onPress={() => setPhotoUri(null)}
+                style={[styles.removeButton, { backgroundColor: theme.background }]}>
+                <ThemedText type="smallBold">✕</ThemedText>
+              </Pressable>
+            </ThemedView>
+          ) : (
+            <>
+              <Pressable
+                onPress={openCamera}
+                style={[styles.button, { backgroundColor: theme.text }]}>
+                <ThemedText style={{ color: theme.background }} type="smallBold">
+                  📷 Take photo
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={pickFromGallery}
+                style={[styles.buttonOutline, { borderColor: theme.text }]}>
+                <ThemedText type="smallBold">Choose from gallery</ThemedText>
+              </Pressable>
+            </>
+          )}
 
-            <ThemedText themeColor="textSecondary" style={styles.or}>
-              ya note likho
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            placeholder={photoUri ? 'Add a caption…' : 'Type a little note…'}
+            placeholderTextColor={theme.textSecondary}
+            multiline
+            style={[styles.noteInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
+          />
+
+          <Pressable
+            onPress={sendMoment}
+            disabled={!canSend || sending}
+            style={[
+              styles.button,
+              { backgroundColor: theme.text, opacity: !canSend || sending ? 0.5 : 1 },
+            ]}>
+            <ThemedText style={{ color: theme.background }} type="smallBold">
+              {sending ? 'Sending…' : 'Send'}
             </ThemedText>
+          </Pressable>
 
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder="Type a little note…"
-              placeholderTextColor={theme.textSecondary}
-              multiline
-              style={[styles.noteInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-            />
-            <Pressable
-              onPress={sendNote}
-              disabled={!note.trim() || sending}
-              style={[
-                styles.button,
-                { backgroundColor: theme.text, opacity: !note.trim() || sending ? 0.5 : 1 },
-              ]}>
-              <ThemedText style={{ color: theme.background }} type="smallBold">
-                {sending ? 'Sending…' : 'Send note'}
-              </ThemedText>
-            </Pressable>
-          </>
-        )}
-
-        {error && (
-          <ThemedText themeColor="textSecondary" style={styles.error}>
-            {error}
-          </ThemedText>
-        )}
+          {error && (
+            <ThemedText themeColor="textSecondary" style={styles.error}>
+              {error}
+            </ThemedText>
+          )}
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -176,12 +159,26 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.four,
     gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
     alignSelf: 'center',
     width: '100%',
     maxWidth: MaxContentWidth,
   },
+  scrollContent: {
+    gap: Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.three,
+  },
+  previewWrap: { position: 'relative' },
   preview: { width: '100%', aspectRatio: 1, borderRadius: Spacing.three },
+  removeButton: {
+    position: 'absolute',
+    top: Spacing.two,
+    right: Spacing.two,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   button: { borderRadius: Spacing.five, paddingVertical: Spacing.three, alignItems: 'center' },
   buttonOutline: {
     borderRadius: Spacing.five,
@@ -189,12 +186,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  or: { textAlign: 'center' },
   noteInput: {
     borderRadius: Spacing.three,
     padding: Spacing.three,
     fontSize: 16,
-    minHeight: 100,
+    minHeight: 80,
     textAlignVertical: 'top',
   },
   error: { textAlign: 'center' },
