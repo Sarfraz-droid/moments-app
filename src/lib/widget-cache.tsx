@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 import { REACTION_EMOJIS } from '@/lib/reactions';
-import { getMomentPhotoUrl } from '@/lib/storage';
+import { getMomentPhotoForWidget } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 
 export type WidgetReactionSummary = {
@@ -15,7 +15,7 @@ export type WidgetMoment = {
   momentId: string;
   pairId: string;
   text: string | null;
-  // https signed URL (ImageWidget only accepts http(s)/data URIs, not file://)
+  // Local file URI when caching succeeds, otherwise a signed HTTPS URL.
   photoUri: string | null;
   senderName: string;
   createdAt: string;
@@ -91,7 +91,7 @@ export async function syncLatestMomentToWidget(pairId: string) {
 
   let photoUri: string | null = null;
   if (moment.storage_path) {
-    photoUri = await getMomentPhotoUrl(moment.storage_path);
+    photoUri = await getMomentPhotoForWidget(moment.storage_path, moment.id);
   }
 
   const reactions = await summarizeReactions(moment.id, user.id);

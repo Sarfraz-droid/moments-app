@@ -3,6 +3,7 @@
 'use no memo';
 
 import { FlexWidget, ImageWidget, TextWidget } from 'react-native-android-widget';
+import type { ImageWidgetSource } from 'react-native-android-widget';
 
 import { Brand } from '@/constants/theme';
 import type { WidgetMoment } from '@/lib/widget-cache';
@@ -49,9 +50,9 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
       <FlexWidget style={{ flex: 1, width: 'match_parent' }}>
         {moment.photoUri ? (
           <ImageWidget
-            image={moment.photoUri as `https:${string}`}
-            imageWidth={300}
-            imageHeight={300}
+            image={moment.photoUri as ImageWidgetSource}
+            imageWidth={180}
+            imageHeight={180}
             resizeMode="cover"
             style={{ height: 'match_parent', width: 'match_parent' }}
           />

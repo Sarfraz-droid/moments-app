@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
+import { MotiView } from 'moti';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedPressable } from '@/components/animated-pressable';
 import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/phone-auth';
@@ -53,66 +54,85 @@ export default function PhoneScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.logoWrap}>
-          <Logo size={64} animated />
-        </ThemedView>
-        <ThemedText type="title" style={styles.title}>
-          {step === 'phone' ? 'Apna number' : 'Code check karo'}
-        </ThemedText>
-        <ThemedText themeColor="textSecondary">
-          {step === 'phone'
-            ? 'Country code ke saath (jaise +91XXXXXXXXXX)'
-            : `${phone} par bheja gaya code daalo`}
-        </ThemedText>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.topRow}>
+          <Logo size={48} animated />
+        </View>
 
-        {step === 'phone' ? (
-          <TextInput
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="+91XXXXXXXXXX"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="phone-pad"
-            autoFocus
-            style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-          />
-        ) : (
-          <TextInput
-            value={code}
-            onChangeText={setCode}
-            placeholder="123456"
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="number-pad"
-            autoFocus
-            style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-          />
-        )}
-
-        <AnimatedPressable
-          onPress={step === 'phone' ? handleSend : handleVerify}
-          disabled={busy || (step === 'phone' ? !phone.trim() : !code.trim())}
-          style={[
-            styles.button,
-            { backgroundColor: theme.text, opacity: busy ? 0.6 : 1 },
-          ]}>
-          <ThemedText style={{ color: theme.background }} type="smallBold">
-            {busy ? 'Please wait…' : step === 'phone' ? 'Send code' : 'Verify'}
+        <MotiView
+          from={{ opacity: 0, translateY: 12 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 350 }}
+          style={styles.titleBlock}>
+          <ThemedText type="display" style={styles.title}>
+            {step === 'phone' ? 'Add your number' : 'Check the code'}
           </ThemedText>
-        </AnimatedPressable>
+          <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+            {step === 'phone'
+              ? 'Country code ke saath (jaise +91XXXXXXXXXX). Keeps your account safe.'
+              : `We sent a 6-digit code to ${phone}.`}
+          </ThemedText>
+        </MotiView>
 
-        {step === 'code' && (
-          <Pressable onPress={() => setStep('phone')} style={styles.linkButton}>
-            <ThemedText themeColor="textSecondary" type="small">
-              Number badlo
+        <View style={styles.spacer} />
+
+        <View style={styles.inputWrap}>
+          {step === 'phone' ? (
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+91XXXXXXXXXX"
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="phone-pad"
+              autoFocus
+              style={[
+                styles.input,
+                { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.divider },
+              ]}
+            />
+          ) : (
+            <TextInput
+              value={code}
+              onChangeText={setCode}
+              placeholder="123456"
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="number-pad"
+              autoFocus
+              style={[
+                styles.input,
+                styles.codeInput,
+                { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.divider },
+              ]}
+              maxLength={6}
+            />
+          )}
+
+          <AnimatedPressable
+            onPress={step === 'phone' ? handleSend : handleVerify}
+            disabled={busy || (step === 'phone' ? !phone.trim() : !code.trim())}
+            style={[
+              styles.button,
+              { backgroundColor: theme.text, opacity: busy || (step === 'phone' ? !phone.trim() : !code.trim()) ? 0.5 : 1 },
+            ]}>
+            <ThemedText style={{ color: theme.background }} type="smallBold">
+              {busy ? 'Please wait…' : step === 'phone' ? 'Send code' : 'Verify'}
             </ThemedText>
-          </Pressable>
-        )}
+          </AnimatedPressable>
 
-        {error && (
-          <ThemedText themeColor="textSecondary" style={styles.error}>
-            {error}
-          </ThemedText>
-        )}
+          {step === 'code' ? (
+            <Pressable onPress={() => setStep('phone')} style={styles.linkButton}>
+              <ThemedText themeColor="textSecondary" type="small">
+                Number badlo
+              </ThemedText>
+            </Pressable>
+          ) : null}
+
+          {error ? (
+            <ThemedText themeColor="textSecondary" style={styles.error}>
+              {error}
+            </ThemedText>
+          ) : null}
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -120,16 +140,35 @@ export default function PhoneScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  safeArea: { flex: 1, padding: Spacing.four, justifyContent: 'center', gap: Spacing.three },
-  logoWrap: { alignItems: 'center', marginBottom: Spacing.two },
-  title: { fontSize: 32, lineHeight: 38 },
+  safeArea: { flex: 1, padding: Spacing.four, justifyContent: 'space-between' },
+  topRow: { alignItems: 'flex-start' },
+  titleBlock: { gap: Spacing.three },
+  title: { fontSize: 36, lineHeight: 42 },
+  subtitle: { lineHeight: 22 },
+  spacer: { flex: 1 },
+  inputWrap: { gap: Spacing.three },
   input: {
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    fontSize: 16,
+    borderRadius: Radii.md,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.four,
+    fontSize: 18,
+    borderWidth: 1,
   },
-  button: { borderRadius: Spacing.five, paddingVertical: Spacing.three, alignItems: 'center' },
+  codeInput: {
+    letterSpacing: 8,
+    textAlign: 'center',
+    fontSize: 24,
+  },
+  button: {
+    borderRadius: Radii.lg,
+    paddingVertical: Spacing.four,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
   linkButton: { alignItems: 'center', paddingVertical: Spacing.two },
   error: { textAlign: 'center' },
 });

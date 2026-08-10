@@ -33,16 +33,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [partnerProfile, setPartnerProfile] = useState<Profile | null>(null);
 
   const loadProfile = useCallback(async (userId: string) => {
-    const { data: existing } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    if (existing) return existing as Profile;
-
-    const { data: created, error } = await supabase
+    // upsert handles the race where two concurrent loadUserData calls (initial
+    // mount + onAuthStateChange) both observe a missing profile and try to
+    // insert, blowing up with profiles_pkey duplicate-key. The second call
+    // collapses to a no-op update and returns the existing row.
+    const { data, error } = await supabase
       .from('profiles')
-      .insert({ id: userId })
+      .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: false })
       .select('*')
       .single();
     if (error) throw error;
-    return created as Profile;
+    return data as Profile;
   }, []);
 
   const loadPair = useCallback(async (userId: string) => {
@@ -72,14 +73,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     async function init() {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(data.session);
-      if (data.session) {
-        await loadUserData(data.session.user.id);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(data.session);
+        if (data.session) {
+          // loadUserData can throw if Supabase is unreachable; the finally
+          // below still flips `loading` so the UI doesn't get stuck on the
+          // splash forever. The profile/pair states stay null, which the
+          // AuthGate treats as "needs onboarding" — the user just retries.
+          await loadUserData(data.session.user.id);
+        }
+      } catch {
+        // Swallowed: the finally handles the UI side, the next auth-state
+        // change or a manual reload will reattempt.
+      } finally {
+        if (mounted) setLoading(false);
       }
-      if (!mounted) return;
-      setLoading(false);
     }
 
     init();

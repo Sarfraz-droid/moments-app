@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "664476111437",
+    "project_id": "memories-b06bb",
+    "storage_bucket": "memories-b06bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:664476111437:android:31ab77b061ef87e949c204",
+        "android_client_info": {
+          "package_name": "com.sarfrazalam.homescreennotifiers"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "664476111437-cr7lsgbjkh0artulkoqfkdcbtkgftnh4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0apehJaKqYur-8u_pr40oVPfK8vqOnK0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "664476111437-6o568u3jdlgk6efev6nji7uimldj33bv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -20,6 +20,9 @@ export function useMoments(pairId: string | undefined) {
       .limit(50);
     if (!error) setMoments((data as Moment[]) ?? []);
     setLoading(false);
+    // Also refresh the widget snapshot on every load so manual pull-to-refresh
+    // and foreground resyncs correct any drift. The top-level useWidgetSync
+    // hook covers the realtime case; this catches everything else.
     syncLatestMomentToWidget(pairId).catch(() => {});
   }, [pairId]);
 
@@ -49,7 +52,6 @@ export function useMoments(pairId: string | undefined) {
         { event: 'INSERT', schema: 'public', table: 'moments', filter: `pair_id=eq.${pairId}` },
         (payload) => {
           setMoments((prev) => [payload.new as Moment, ...prev]);
-          syncLatestMomentToWidget(pairId).catch(() => {});
         }
       )
       .subscribe();

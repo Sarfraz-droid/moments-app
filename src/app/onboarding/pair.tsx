@@ -1,13 +1,14 @@
 import * as Clipboard from 'expo-clipboard';
+import { MotiView } from 'moti';
 import { useState } from 'react';
-import { Share, StyleSheet, TextInput } from 'react-native';
+import { Pressable, Share, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedPressable } from '@/components/animated-pressable';
 import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 
@@ -16,6 +17,7 @@ export default function PairScreen() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const theme = useTheme();
 
   async function handleCreate() {
@@ -23,7 +25,7 @@ export default function PairScreen() {
     setError(null);
     try {
       await createPair();
-    } catch (e) {
+    } catch {
       setError('Kuch gadbad ho gaya, dobara try karo.');
     } finally {
       setBusy(false);
@@ -36,7 +38,7 @@ export default function PairScreen() {
     setError(null);
     try {
       await joinPair(code);
-    } catch (e) {
+    } catch {
       setError('Code galat hai ya expire ho gaya.');
     } finally {
       setBusy(false);
@@ -53,32 +55,57 @@ export default function PairScreen() {
   async function handleCopy() {
     if (!pair) return;
     await Clipboard.setStringAsync(pair.invite_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   if (pair && pair.status === 'pending') {
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={styles.safeArea}>
-          <ThemedView style={styles.logoWrap}>
-            <Logo size={64} animated />
-          </ThemedView>
-          <ThemedText type="title" style={styles.title}>
-            Waiting for them…
-          </ThemedText>
-          <ThemedText themeColor="textSecondary">Ye code partner ko bhejo:</ThemedText>
-          <ThemedView type="backgroundElement" style={styles.codeBox}>
-            <ThemedText type="title" style={styles.code}>
-              {pair.invite_code}
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <View style={styles.topRow}>
+            <Logo size={48} animated />
+          </View>
+
+          <MotiView
+            from={{ opacity: 0, translateY: 12 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 350 }}
+            style={styles.titleBlock}>
+            <ThemedText type="display" style={styles.title}>
+              Waiting for{'\n'}them to join…
             </ThemedText>
-          </ThemedView>
-          <AnimatedPressable onPress={handleShare} style={[styles.button, { backgroundColor: theme.text }]}>
-            <ThemedText style={{ color: theme.background }} type="smallBold">
-              Share invite
+            <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+              Send this code to your person. They enter it on their phone and you&apos;re connected.
             </ThemedText>
-          </AnimatedPressable>
-          <AnimatedPressable onPress={handleCopy} style={[styles.buttonOutline, { borderColor: theme.text }]}>
-            <ThemedText type="smallBold">Copy code</ThemedText>
-          </AnimatedPressable>
+          </MotiView>
+
+          <View style={styles.spacer} />
+
+          <View style={styles.codeWrap}>
+            <MotiView
+              from={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', damping: 10, delay: 200 }}>
+              <ThemedView type="backgroundElement" style={styles.codeBox}>
+                <ThemedText type="display" style={styles.code}>
+                  {pair.invite_code}
+                </ThemedText>
+              </ThemedView>
+            </MotiView>
+
+            <AnimatedPressable onPress={handleShare} style={[styles.button, { backgroundColor: theme.text }]}>
+              <ThemedText style={{ color: theme.background }} type="smallBold">
+                Share invite
+              </ThemedText>
+            </AnimatedPressable>
+
+            <Pressable onPress={handleCopy} style={styles.copyButton}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {copied ? 'Copied! ✓' : 'Copy code'}
+              </ThemedText>
+            </Pressable>
+          </View>
         </SafeAreaView>
       </ThemedView>
     );
@@ -86,50 +113,71 @@ export default function PairScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.logoWrap}>
-          <Logo size={64} animated />
-        </ThemedView>
-        <ThemedText type="title" style={styles.title}>
-          Connect with{'\n'}your person 💛
-        </ThemedText>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <View style={styles.topRow}>
+          <Logo size={48} animated />
+        </View>
 
-        <AnimatedPressable
-          onPress={handleCreate}
-          disabled={busy}
-          style={[styles.button, { backgroundColor: theme.text, opacity: busy ? 0.5 : 1 }]}>
-          <ThemedText style={{ color: theme.background }} type="smallBold">
-            Create invite
+        <MotiView
+          from={{ opacity: 0, translateY: 12 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 350 }}
+          style={styles.titleBlock}>
+          <ThemedText type="display" style={styles.title}>
+            Connect with{'\n'}your person
           </ThemedText>
-        </AnimatedPressable>
-
-        <ThemedText themeColor="textSecondary" style={styles.or}>
-          ya
-        </ThemedText>
-
-        <TextInput
-          value={code}
-          onChangeText={setCode}
-          placeholder="Enter their code"
-          placeholderTextColor={theme.textSecondary}
-          autoCapitalize="characters"
-          style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
-        />
-        <AnimatedPressable
-          onPress={handleJoin}
-          disabled={!code.trim() || busy}
-          style={[
-            styles.buttonOutline,
-            { borderColor: theme.text, opacity: !code.trim() || busy ? 0.5 : 1 },
-          ]}>
-          <ThemedText type="smallBold">Join</ThemedText>
-        </AnimatedPressable>
-
-        {error && (
-          <ThemedText themeColor="textSecondary" style={styles.error}>
-            {error}
+          <ThemedText themeColor="textSecondary" style={styles.subtitle}>
+            Create an invite to share, or enter the code they sent you.
           </ThemedText>
-        )}
+        </MotiView>
+
+        <View style={styles.spacer} />
+
+        <View style={styles.formWrap}>
+          <AnimatedPressable
+            onPress={handleCreate}
+            disabled={busy}
+            style={[styles.button, { backgroundColor: theme.brand, opacity: busy ? 0.6 : 1 }]}>
+            <ThemedText style={{ color: '#fff' }} type="smallBold">
+              {busy ? 'Creating…' : 'Create invite'}
+            </ThemedText>
+          </AnimatedPressable>
+
+          <View style={styles.dividerRow}>
+            <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.dividerLabel}>
+              or join theirs
+            </ThemedText>
+            <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+          </View>
+
+          <TextInput
+            value={code}
+            onChangeText={setCode}
+            placeholder="Enter their code"
+            placeholderTextColor={theme.textSecondary}
+            autoCapitalize="characters"
+            style={[
+              styles.input,
+              { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.divider },
+            ]}
+          />
+          <AnimatedPressable
+            onPress={handleJoin}
+            disabled={!code.trim() || busy}
+            style={[
+              styles.buttonOutline,
+              { borderColor: theme.text, opacity: !code.trim() || busy ? 0.5 : 1 },
+            ]}>
+            <ThemedText type="smallBold">Join</ThemedText>
+          </AnimatedPressable>
+
+          {error ? (
+            <ThemedText themeColor="textSecondary" style={styles.error}>
+              {error}
+            </ThemedText>
+          ) : null}
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -137,29 +185,58 @@ export default function PairScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  safeArea: { flex: 1, padding: Spacing.four, justifyContent: 'center', gap: Spacing.three },
-  logoWrap: { alignItems: 'center', marginBottom: Spacing.two },
-  title: { fontSize: 32, lineHeight: 38 },
-  input: {
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.three,
-    fontSize: 16,
-    letterSpacing: 2,
-  },
-  button: { borderRadius: Spacing.five, paddingVertical: Spacing.three, alignItems: 'center' },
-  buttonOutline: {
-    borderRadius: Spacing.five,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  or: { textAlign: 'center' },
+  safeArea: { flex: 1, padding: Spacing.four, justifyContent: 'space-between' },
+  topRow: { alignItems: 'flex-start' },
+  titleBlock: { gap: Spacing.three },
+  title: { fontSize: 36, lineHeight: 42 },
+  subtitle: { lineHeight: 22 },
+  spacer: { flex: 1 },
+  codeWrap: { gap: Spacing.three },
   codeBox: {
-    borderRadius: Spacing.three,
+    borderRadius: Radii.lg,
+    paddingVertical: Spacing.five,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  code: { fontSize: 44, letterSpacing: 10 },
+  button: {
+    borderRadius: Radii.lg,
     paddingVertical: Spacing.four,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  code: { fontSize: 40, letterSpacing: 8 },
+  buttonOutline: {
+    borderRadius: Radii.lg,
+    paddingVertical: Spacing.four,
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  copyButton: { alignItems: 'center', paddingVertical: Spacing.two },
+  formWrap: { gap: Spacing.three },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginVertical: Spacing.two,
+  },
+  divider: { flex: 1, height: 1 },
+  dividerLabel: { letterSpacing: 0.5 },
+  input: {
+    borderRadius: Radii.md,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.four,
+    fontSize: 18,
+    letterSpacing: 4,
+    textAlign: 'center',
+    borderWidth: 1,
+  },
   error: { textAlign: 'center' },
 });
