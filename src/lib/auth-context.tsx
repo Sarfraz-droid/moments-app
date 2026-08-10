@@ -12,6 +12,7 @@ type AuthContextValue = {
   profile: Profile | null;
   pair: Pair | null;
   partnerProfile: Profile | null;
+  continueAnonymously: () => Promise<void>;
   setDisplayName: (name: string) => Promise<void>;
   createPair: () => Promise<Pair>;
   joinPair: (inviteCode: string) => Promise<Pair>;
@@ -55,22 +56,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPair((data as Pair) ?? null);
   }, []);
 
+  const loadUserData = useCallback(
+    async (userId: string) => {
+      const loadedProfile = await loadProfile(userId);
+      setProfile(loadedProfile);
+      await loadPair(userId);
+    },
+    [loadProfile, loadPair]
+  );
+
+  // Unlike before, no anonymous sign-in happens automatically here — the user
+  // picks Google, phone, or "continue as guest" on the welcome screen, so the
+  // choice actually means something instead of being pre-empted at boot.
   useEffect(() => {
     let mounted = true;
 
     async function init() {
-      let { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        const { data: signInData, error } = await supabase.auth.signInAnonymously();
-        if (error) throw error;
-        data = { session: signInData.session };
-      }
-      if (!mounted || !data.session) return;
-      setSession(data.session);
-      const loadedProfile = await loadProfile(data.session.user.id);
+      const { data } = await supabase.auth.getSession();
       if (!mounted) return;
-      setProfile(loadedProfile);
-      await loadPair(data.session.user.id);
+      setSession(data.session);
+      if (data.session) {
+        await loadUserData(data.session.user.id);
+      }
       if (!mounted) return;
       setLoading(false);
     }
@@ -79,13 +86,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      if (newSession) {
+        loadUserData(newSession.user.id).catch(() => {});
+      } else {
+        setProfile(null);
+        setPair(null);
+      }
     });
 
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadProfile, loadPair]);
+  }, [loadUserData]);
 
   useEffect(() => {
     if (pair?.status === 'active') {
@@ -125,6 +138,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(channel);
     };
   }, [pair]);
+
+  const continueAnonymously = useCallback(async () => {
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) throw error;
+  }, []);
 
   const setDisplayName = useCallback(
     async (name: string) => {
@@ -182,12 +200,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       pair,
       partnerProfile,
+      continueAnonymously,
       setDisplayName,
       createPair,
       joinPair,
       refreshPair,
     }),
-    [loading, session, profile, pair, partnerProfile, setDisplayName, createPair, joinPair, refreshPair]
+    [
+      loading,
+      session,
+      profile,
+      pair,
+      partnerProfile,
+      continueAnonymously,
+      setDisplayName,
+      createPair,
+      joinPair,
+      refreshPair,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

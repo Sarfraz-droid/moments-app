@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AnimatedPressable } from '@/components/animated-pressable';
 import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -31,7 +32,7 @@ export default function NameScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.logoWrap}>
-          <Logo size={64} />
+          <Logo size={64} animated />
         </ThemedView>
         <ThemedText type="title" style={styles.title}>
           Kiske naam se{'\n'}bheju? 💌
@@ -46,14 +47,14 @@ export default function NameScreen() {
           autoFocus
           maxLength={30}
         />
-        <Pressable
+        <AnimatedPressable
           onPress={handleContinue}
           disabled={!name.trim() || saving}
           style={[styles.button, { backgroundColor: theme.text, opacity: !name.trim() || saving ? 0.5 : 1 }]}>
           <ThemedText style={{ color: theme.background }} type="smallBold">
             {saving ? 'Saving…' : 'Continue'}
           </ThemedText>
-        </Pressable>
+        </AnimatedPressable>
       </SafeAreaView>
     </ThemedView>
   );

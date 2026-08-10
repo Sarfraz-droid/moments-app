@@ -2,10 +2,12 @@ import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
+import { MotiView } from 'moti';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AnimatedPressable } from '@/components/animated-pressable';
 import { BrandHeader } from '@/components/brand-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -96,28 +98,32 @@ export default function SendScreen() {
 
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           {photoUri ? (
-            <ThemedView style={styles.previewWrap}>
+            <MotiView
+              from={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', damping: 14 }}
+              style={styles.previewWrap}>
               <Image source={{ uri: photoUri }} style={styles.preview} contentFit="cover" />
               <Pressable
                 onPress={() => setPhotoUri(null)}
                 style={[styles.removeButton, { backgroundColor: theme.background }]}>
                 <ThemedText type="smallBold">✕</ThemedText>
               </Pressable>
-            </ThemedView>
+            </MotiView>
           ) : (
             <>
-              <Pressable
+              <AnimatedPressable
                 onPress={openCamera}
                 style={[styles.button, { backgroundColor: theme.text }]}>
                 <ThemedText style={{ color: theme.background }} type="smallBold">
                   📷 Take photo
                 </ThemedText>
-              </Pressable>
-              <Pressable
+              </AnimatedPressable>
+              <AnimatedPressable
                 onPress={pickFromGallery}
                 style={[styles.buttonOutline, { borderColor: theme.text }]}>
                 <ThemedText type="smallBold">Choose from gallery</ThemedText>
-              </Pressable>
+              </AnimatedPressable>
             </>
           )}
 
@@ -130,7 +136,7 @@ export default function SendScreen() {
             style={[styles.noteInput, { color: theme.text, backgroundColor: theme.backgroundElement }]}
           />
 
-          <Pressable
+          <AnimatedPressable
             onPress={sendMoment}
             disabled={!canSend || sending}
             style={[
@@ -140,7 +146,7 @@ export default function SendScreen() {
             <ThemedText style={{ color: theme.background }} type="smallBold">
               {sending ? 'Sending…' : 'Send'}
             </ThemedText>
-          </Pressable>
+          </AnimatedPressable>
 
           {error && (
             <ThemedText themeColor="textSecondary" style={styles.error}>

@@ -86,6 +86,24 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
           text={`${moment.senderName} · ${timeAgo(moment.createdAt)}`}
           style={{ fontSize: 11, color: '#FFFFFFCC' }}
         />
+        <FlexWidget style={{ flexDirection: 'row', flexGap: 4, marginTop: 4 }}>
+          {moment.reactions.map((r) => (
+            <FlexWidget
+              key={r.emoji}
+              clickAction={r.emoji}
+              clickActionData={{ emoji: r.emoji, momentId: moment.momentId, pairId: moment.pairId }}
+              style={{
+                backgroundColor: r.mine ? '#FFFFFF33' : '#FFFFFF14',
+                borderRadius: 10,
+                padding: 4,
+              }}>
+              <TextWidget
+                text={r.count > 0 ? `${r.emoji}${r.count}` : r.emoji}
+                style={{ fontSize: 12, color: '#FFFFFF' }}
+              />
+            </FlexWidget>
+          ))}
+        </FlexWidget>
       </FlexWidget>
     </FlexWidget>
   );

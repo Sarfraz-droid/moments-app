@@ -75,6 +75,17 @@
               "previewImage": "./assets/images/icon.png",
               "updatePeriodMillis": 1800000,
               "resizeMode": "horizontal|vertical"
+            },
+            {
+              "name": "AddMomentWidget",
+              "label": "Send a Moment",
+              "minWidth": "80dp",
+              "minHeight": "80dp",
+              "targetCellWidth": 1,
+              "targetCellHeight": 1,
+              "description": "One tap to send your person a photo or note",
+              "previewImage": "./assets/images/icon.png",
+              "resizeMode": "none"
             }
           ]
         }

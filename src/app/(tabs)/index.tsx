@@ -1,4 +1,6 @@
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { MotiView } from 'moti';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,10 +14,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { useMoments } from '@/hooks/use-moments';
 import { useReactions } from '@/hooks/use-reactions';
 import { useAuth } from '@/lib/auth-context';
+import { REACTION_EMOJIS } from '@/lib/reactions';
 import { getMomentPhotoUrl } from '@/lib/storage';
 import type { Moment, MomentReaction } from '@/lib/types';
-
-const REACTION_EMOJIS = ['💛', '😂', '😮', '😢', '🔥'];
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -43,17 +44,21 @@ function ReactionBar({
         const forEmoji = reactions.filter((r) => r.emoji === emoji);
         const mine = forEmoji.some((r) => r.user_id === userId);
         return (
-          <Pressable
-            key={emoji}
-            onPress={() => onToggle(emoji)}
-            style={[
-              styles.reactionPill,
-              { backgroundColor: mine ? theme.backgroundSelected : 'transparent' },
-            ]}>
-            <ThemedText type="small">
-              {emoji}
-              {forEmoji.length > 0 ? ` ${forEmoji.length}` : ''}
-            </ThemedText>
+          <Pressable key={emoji} onPress={() => onToggle(emoji)}>
+            <MotiView
+              key={`${mine}-${forEmoji.length}`}
+              from={{ scale: 1.3 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 10 }}
+              style={[
+                styles.reactionPill,
+                { backgroundColor: mine ? theme.backgroundSelected : 'transparent' },
+              ]}>
+              <ThemedText type="small">
+                {emoji}
+                {forEmoji.length > 0 ? ` ${forEmoji.length}` : ''}
+              </ThemedText>
+            </MotiView>
           </Pressable>
         );
       })}
@@ -85,8 +90,12 @@ function MomentCard({
   }, [moment]);
 
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
-      {moment.storage_path ? (
+    <MotiView
+      from={{ opacity: 0, translateY: 16 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: 'timing', duration: 350 }}>
+      <ThemedView type="backgroundElement" style={styles.card}>
+        {moment.storage_path ? (
         url ? (
           <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
         ) : (
@@ -101,12 +110,13 @@ function MomentCard({
       <ThemedText type="small" themeColor="textSecondary" style={styles.meta}>
         {isMe ? 'You' : 'Them'} · {timeAgo(moment.created_at)}
       </ThemedText>
-      <ReactionBar
-        reactions={reactions}
-        userId={userId}
-        onToggle={(emoji) => onToggleReaction(moment.id, emoji)}
-      />
-    </ThemedView>
+        <ReactionBar
+          reactions={reactions}
+          userId={userId}
+          onToggle={(emoji) => onToggleReaction(moment.id, emoji)}
+        />
+      </ThemedView>
+    </MotiView>
   );
 }
 
@@ -125,14 +135,21 @@ export default function FeedScreen() {
           onRefresh={refresh}
           refreshing={loading}
           ListHeaderComponent={
-            <BrandHeader
-              subtitle={partnerProfile ? `with ${partnerProfile.display_name}` : undefined}
-            />
+            <View style={styles.headerRow}>
+              <BrandHeader
+                subtitle={partnerProfile ? `with ${partnerProfile.display_name}` : undefined}
+              />
+              <Pressable onPress={() => router.push('/account')} hitSlop={12}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Account
+                </ThemedText>
+              </Pressable>
+            </View>
           }
           ListEmptyComponent={
             !loading ? (
               <ThemedView style={styles.emptyState}>
-                <Logo size={56} />
+                <Logo size={56} animated />
                 <ThemedText themeColor="textSecondary" style={styles.empty}>
                   Koi photo/note nahi abhi.{'\n'}Send tab se pehla moment bhejo!
                 </ThemedText>
@@ -166,9 +183,19 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
   },
   listContent: { padding: Spacing.three, gap: Spacing.three },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   emptyState: { alignItems: 'center', gap: Spacing.three, marginTop: Spacing.six },
   empty: { textAlign: 'center' },
-  card: { borderRadius: Spacing.three, padding: Spacing.two, gap: Spacing.two },
+  card: {
+    borderRadius: Spacing.three,
+    padding: Spacing.two,
+    gap: Spacing.two,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
+  },
   photo: { width: '100%', aspectRatio: 1, borderRadius: Spacing.two },
   photoLoading: { backgroundColor: '#00000022' },
   noteText: { fontSize: 20, padding: Spacing.three },

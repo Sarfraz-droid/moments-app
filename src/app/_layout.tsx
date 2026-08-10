@@ -17,6 +17,7 @@ export default function RootLayout() {
         <AuthGate>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="camera" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="account" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           </Stack>
         </AuthGate>
       </AuthProvider>

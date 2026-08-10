@@ -1,8 +1,9 @@
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Pressable, Share, StyleSheet, TextInput } from 'react-native';
+import { Share, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AnimatedPressable } from '@/components/animated-pressable';
 import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -59,7 +60,7 @@ export default function PairScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <ThemedView style={styles.logoWrap}>
-            <Logo size={64} />
+            <Logo size={64} animated />
           </ThemedView>
           <ThemedText type="title" style={styles.title}>
             Waiting for them…
@@ -70,14 +71,14 @@ export default function PairScreen() {
               {pair.invite_code}
             </ThemedText>
           </ThemedView>
-          <Pressable onPress={handleShare} style={[styles.button, { backgroundColor: theme.text }]}>
+          <AnimatedPressable onPress={handleShare} style={[styles.button, { backgroundColor: theme.text }]}>
             <ThemedText style={{ color: theme.background }} type="smallBold">
               Share invite
             </ThemedText>
-          </Pressable>
-          <Pressable onPress={handleCopy} style={[styles.buttonOutline, { borderColor: theme.text }]}>
+          </AnimatedPressable>
+          <AnimatedPressable onPress={handleCopy} style={[styles.buttonOutline, { borderColor: theme.text }]}>
             <ThemedText type="smallBold">Copy code</ThemedText>
-          </Pressable>
+          </AnimatedPressable>
         </SafeAreaView>
       </ThemedView>
     );
@@ -87,20 +88,20 @@ export default function PairScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.logoWrap}>
-          <Logo size={64} />
+          <Logo size={64} animated />
         </ThemedView>
         <ThemedText type="title" style={styles.title}>
           Connect with{'\n'}your person 💛
         </ThemedText>
 
-        <Pressable
+        <AnimatedPressable
           onPress={handleCreate}
           disabled={busy}
           style={[styles.button, { backgroundColor: theme.text, opacity: busy ? 0.5 : 1 }]}>
           <ThemedText style={{ color: theme.background }} type="smallBold">
             Create invite
           </ThemedText>
-        </Pressable>
+        </AnimatedPressable>
 
         <ThemedText themeColor="textSecondary" style={styles.or}>
           ya
@@ -114,7 +115,7 @@ export default function PairScreen() {
           autoCapitalize="characters"
           style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement }]}
         />
-        <Pressable
+        <AnimatedPressable
           onPress={handleJoin}
           disabled={!code.trim() || busy}
           style={[
@@ -122,7 +123,7 @@ export default function PairScreen() {
             { borderColor: theme.text, opacity: !code.trim() || busy ? 0.5 : 1 },
           ]}>
           <ThemedText type="smallBold">Join</ThemedText>
-        </Pressable>
+        </AnimatedPressable>
 
         {error && (
           <ThemedText themeColor="textSecondary" style={styles.error}>

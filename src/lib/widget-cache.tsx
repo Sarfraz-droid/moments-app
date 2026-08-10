@@ -1,15 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-import { supabase } from '@/lib/supabase';
+import { REACTION_EMOJIS } from '@/lib/reactions';
 import { getMomentPhotoUrl } from '@/lib/storage';
+import { supabase } from '@/lib/supabase';
+
+export type WidgetReactionSummary = {
+  emoji: string;
+  count: number;
+  mine: boolean;
+};
 
 export type WidgetMoment = {
+  momentId: string;
+  pairId: string;
   text: string | null;
   // https signed URL (ImageWidget only accepts http(s)/data URIs, not file://)
   photoUri: string | null;
   senderName: string;
   createdAt: string;
+  reactions: WidgetReactionSummary[];
 };
 
 const KEY = 'widget:latest-moment';
@@ -24,16 +34,31 @@ export async function readLatestMomentForWidget(): Promise<WidgetMoment | null> 
   return raw ? (JSON.parse(raw) as WidgetMoment) : null;
 }
 
+export async function redrawMomentWidget() {
+  if (Platform.OS !== 'android') return;
+  const { requestWidgetUpdate } = await import('react-native-android-widget');
+  const { MomentWidget } = await import('@/widgets/moment-widget');
+  const latest = await readLatestMomentForWidget();
+  await requestWidgetUpdate({
+    widgetName: 'MomentWidget',
+    renderWidget: () => <MomentWidget moment={latest} />,
+  });
+}
+
 async function clearWidget() {
   await AsyncStorage.removeItem(KEY);
-  if (Platform.OS === 'android') {
-    const { requestWidgetUpdate } = await import('react-native-android-widget');
-    const { MomentWidget } = await import('@/widgets/moment-widget');
-    await requestWidgetUpdate({
-      widgetName: 'MomentWidget',
-      renderWidget: () => <MomentWidget moment={null} />,
-    });
-  }
+  await redrawMomentWidget();
+}
+
+async function summarizeReactions(momentId: string, viewerId: string): Promise<WidgetReactionSummary[]> {
+  const { data } = await supabase
+    .from('moment_reactions')
+    .select('emoji, user_id')
+    .eq('moment_id', momentId);
+  return REACTION_EMOJIS.map((emoji) => {
+    const forEmoji = (data ?? []).filter((r) => r.emoji === emoji);
+    return { emoji, count: forEmoji.length, mine: forEmoji.some((r) => r.user_id === viewerId) };
+  });
 }
 
 /** Fetches the newest moment your *partner* sent for a pair (never your own —
@@ -47,7 +72,7 @@ export async function syncLatestMomentToWidget(pairId: string) {
 
   const { data: moment } = await supabase
     .from('moments')
-    .select('text, storage_path, created_at, sender_id')
+    .select('id, text, storage_path, created_at, sender_id')
     .eq('pair_id', pairId)
     .neq('sender_id', user.id)
     .order('created_at', { ascending: false })
@@ -69,20 +94,28 @@ export async function syncLatestMomentToWidget(pairId: string) {
     photoUri = await getMomentPhotoUrl(moment.storage_path);
   }
 
+  const reactions = await summarizeReactions(moment.id, user.id);
+
   await saveLatestMomentForWidget({
+    momentId: moment.id,
+    pairId,
     text: moment.text,
     photoUri,
     senderName: sender?.display_name ?? 'Someone',
     createdAt: moment.created_at,
+    reactions,
   });
 
-  if (Platform.OS === 'android') {
-    const { requestWidgetUpdate } = await import('react-native-android-widget');
-    const { MomentWidget } = await import('@/widgets/moment-widget');
-    const latest = await readLatestMomentForWidget();
-    await requestWidgetUpdate({
-      widgetName: 'MomentWidget',
-      renderWidget: () => <MomentWidget moment={latest} />,
-    });
-  }
+  await redrawMomentWidget();
+}
+
+/** Re-summarizes reactions for whatever moment is currently cached, without
+ * refetching the moment itself — used after a reaction tap on the widget so
+ * the redraw is instant and doesn't need a full moment refetch. */
+export async function refreshCachedMomentReactions(viewerId: string) {
+  const cached = await readLatestMomentForWidget();
+  if (!cached) return;
+  const reactions = await summarizeReactions(cached.momentId, viewerId);
+  await saveLatestMomentForWidget({ ...cached, reactions });
+  await redrawMomentWidget();
 }
