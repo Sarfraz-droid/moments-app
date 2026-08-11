@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { uniqueRealtimeTopic } from '@/lib/realtime';
 import type { Moment } from '@/lib/types';
 import { syncLatestMomentToWidget } from '@/lib/widget-cache';
 
@@ -27,7 +28,8 @@ export function useMoments(pairId: string | undefined) {
   }, [pairId]);
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timer);
   }, [load]);
 
   // Realtime's websocket can drop while the app is backgrounded (Android
@@ -46,12 +48,13 @@ export function useMoments(pairId: string | undefined) {
   useEffect(() => {
     if (!pairId) return;
     const channel = supabase
-      .channel(`moments-${pairId}`)
+      .channel(uniqueRealtimeTopic(`moments-${pairId}`))
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'moments', filter: `pair_id=eq.${pairId}` },
         (payload) => {
-          setMoments((prev) => [payload.new as Moment, ...prev]);
+          const next = payload.new as Moment;
+          setMoments((prev) => [next, ...prev.filter((moment) => moment.id !== next.id)]);
         }
       )
       .subscribe();

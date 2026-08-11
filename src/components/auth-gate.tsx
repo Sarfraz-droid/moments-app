@@ -33,6 +33,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const needsPair = !pair || pair.status !== 'active';
   const onOnboarding = pathname.startsWith('/onboarding');
   const onJoin = pathname.startsWith('/join');
+  const linkingPhone = pathname === '/onboarding/phone' && session?.user.is_anonymous;
 
   if (needsAuth) {
     if (pathname !== '/onboarding/welcome' && pathname !== '/onboarding/phone' && !onJoin) {
@@ -48,6 +49,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (needsPair) {
     if (pathname !== '/onboarding/pair' && !onJoin) return <Redirect href="/onboarding/pair" />;
+    return children;
+  }
+
+  // An anonymous user can attach a phone number without abandoning their
+  // existing profile, pair, and moments. This route used to be caught by the
+  // general onboarding redirect below, making the account button jump home.
+  if (linkingPhone) {
     return children;
   }
 

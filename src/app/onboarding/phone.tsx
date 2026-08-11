@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { MotiView } from 'moti';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,7 +7,7 @@ import { AnimatedPressable } from '@/components/animated-pressable';
 import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Radii, Spacing } from '@/constants/theme';
+import { Fonts, Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/phone-auth';
@@ -31,7 +30,7 @@ export default function PhoneScreen() {
       await sendPhoneOtp(phone.trim(), linkToCurrentUser);
       setStep('code');
     } catch {
-      setError('Code bhejne me dikkat aayi. Number check karo (+91...).');
+      setError('We could not send a code. Check the full number and country code.');
     } finally {
       setBusy(false);
     }
@@ -46,7 +45,7 @@ export default function PhoneScreen() {
       if (router.canGoBack()) router.back();
       else router.replace('/');
     } catch {
-      setError('Code galat hai. Dobara try karo.');
+      setError('That code is not valid. Check it and try again.');
     } finally {
       setBusy(false);
     }
@@ -59,20 +58,16 @@ export default function PhoneScreen() {
           <Logo size={48} animated />
         </View>
 
-        <MotiView
-          from={{ opacity: 0, translateY: 12 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 350 }}
-          style={styles.titleBlock}>
+        <View style={styles.titleBlock}>
           <ThemedText type="display" style={styles.title}>
             {step === 'phone' ? 'Add your number' : 'Check the code'}
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.subtitle}>
             {step === 'phone'
-              ? 'Country code ke saath (jaise +91XXXXXXXXXX). Keeps your account safe.'
+              ? 'Include the country code, for example +91. This keeps your account secure.'
               : `We sent a 6-digit code to ${phone}.`}
           </ThemedText>
-        </MotiView>
+        </View>
 
         <View style={styles.spacer} />
 
@@ -112,9 +107,9 @@ export default function PhoneScreen() {
             disabled={busy || (step === 'phone' ? !phone.trim() : !code.trim())}
             style={[
               styles.button,
-              { backgroundColor: theme.text, opacity: busy || (step === 'phone' ? !phone.trim() : !code.trim()) ? 0.5 : 1 },
+              { backgroundColor: theme.brand, opacity: busy || (step === 'phone' ? !phone.trim() : !code.trim()) ? 0.5 : 1 },
             ]}>
-            <ThemedText style={{ color: theme.background }} type="smallBold">
+            <ThemedText style={{ color: '#FFFFFF' }} type="smallBold">
               {busy ? 'Please wait…' : step === 'phone' ? 'Send code' : 'Verify'}
             </ThemedText>
           </AnimatedPressable>
@@ -122,7 +117,7 @@ export default function PhoneScreen() {
           {step === 'code' ? (
             <Pressable onPress={() => setStep('phone')} style={styles.linkButton}>
               <ThemedText themeColor="textSecondary" type="small">
-                Number badlo
+                Change number
               </ThemedText>
             </Pressable>
           ) : null}
@@ -148,6 +143,7 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   inputWrap: { gap: Spacing.three },
   input: {
+    fontFamily: Fonts.sans,
     borderRadius: Radii.md,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
@@ -163,12 +159,9 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     paddingVertical: Spacing.four,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 4,
+    minHeight: 50,
+    justifyContent: 'center',
   },
-  linkButton: { alignItems: 'center', paddingVertical: Spacing.two },
+  linkButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   error: { textAlign: 'center' },
 });

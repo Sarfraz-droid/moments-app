@@ -17,7 +17,7 @@ export default function JoinScreen() {
   // stale, unauthenticated `joinPair`).
   useEffect(() => {
     if (loading || session) return;
-    continueAnonymously().catch(() => setError('Kuch gadbad ho gaya, dobara try karo.'));
+    continueAnonymously().catch(() => setError('We could not set up your account. Please try again.'));
   }, [loading, session, continueAnonymously]);
 
   useEffect(() => {
@@ -25,12 +25,13 @@ export default function JoinScreen() {
     attempted.current = true;
     joinPair(code)
       .then(() => router.replace('/'))
-      .catch(() => setError('Code galat hai ya expire ho gaya.'));
+      .catch(() => setError('That invite code is invalid or has expired.'));
   }, [loading, code, session, joinPair]);
 
   return (
-    <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <ThemedText>{error ?? 'Connecting…'}</ThemedText>
+    <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
+      <ThemedText type="title">{error ? 'Could not connect' : 'Connecting…'}</ThemedText>
+      {error ? <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>{error}</ThemedText> : null}
     </ThemedView>
   );
 }

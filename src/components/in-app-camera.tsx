@@ -28,7 +28,7 @@ export function InAppCamera({ onCapture, onCancel }: Props) {
     return (
       <ThemedView style={styles.permissionContainer}>
         <ThemedText themeColor="textSecondary" style={styles.permissionText}>
-          Camera access chahiye photo lene ke liye.
+          Allow camera access to take a photo.
         </ThemedText>
         <Pressable onPress={requestPermission} style={styles.permissionButton}>
           <ThemedText type="smallBold">Allow camera</ThemedText>
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.five,
     paddingBottom: Spacing.four,
   },
-  sideButton: { padding: Spacing.two },
+  sideButton: { minWidth: 64, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   controlText: { color: '#FFFFFF' },
   shutter: {
     width: 72,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     backgroundColor: '#FFFFFF',
     borderWidth: 4,
-    borderColor: '#00000055',
+    borderColor: '#FFFFFF66',
   },
   shutterDisabled: { opacity: 0.5 },
   permissionContainer: {

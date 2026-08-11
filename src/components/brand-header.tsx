@@ -1,27 +1,20 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 
 export function BrandHeader({
+  title = 'Moments',
   subtitle,
-  trailing,
-  onTrailingPress,
 }: {
+  title?: string;
   subtitle?: string;
-  trailing?: string;
-  onTrailingPress?: () => void;
 }) {
-  const theme = useTheme();
   return (
     <View style={styles.row}>
       <View style={styles.titleBlock}>
-        <Logo size={36} />
         <View style={styles.textColumn}>
           <ThemedText type="display" style={styles.title}>
-            Moments
+            {title}
           </ThemedText>
           {subtitle ? (
             <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
@@ -30,48 +23,32 @@ export function BrandHeader({
           ) : null}
         </View>
       </View>
-      {trailing ? (
-        <Pressable
-          onPress={onTrailingPress}
-          hitSlop={12}
-          style={[styles.accountPill, { borderColor: theme.divider }]}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            {trailing}
-          </ThemedText>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.two,
+    justifyContent: 'center',
+    minHeight: 54,
   },
   titleBlock: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    flexShrink: 1,
+    justifyContent: 'center',
   },
   textColumn: {
+    alignItems: 'center',
     gap: 1,
   },
   title: {
     fontSize: 22,
-    letterSpacing: -0.4,
+    lineHeight: 27,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 12,
-    marginTop: 1,
-  },
-  accountPill: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: 999,
-    borderWidth: 1,
+    lineHeight: 16,
+    textAlign: 'center',
   },
 });

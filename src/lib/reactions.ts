@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export const REACTION_EMOJIS = ['💛', '😂', '😮', '😢', '🔥'];
+export const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
 
 /** Toggles the given user's reaction on a moment: same emoji removes it,
  * a different emoji replaces it (one reaction per person per moment). */

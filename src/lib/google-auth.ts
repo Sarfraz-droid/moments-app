@@ -9,7 +9,10 @@ WebBrowser.maybeCompleteAuthSession();
  * identity onto the current (typically anonymous) session so the same
  * profile/pair/moments carry over instead of creating a new user. */
 export async function signInWithGoogle(linkToCurrentUser: boolean) {
-  const redirectTo = Linking.createURL('/');
+  // `path` is additive in Expo Linking. Passing "/" produces a slash-only
+  // route that Expo Router can treat as unmatched once Supabase appends its
+  // auth parameters; an empty path produces the scheme root (`scheme://`).
+  const redirectTo = Linking.createURL('');
   const credentials = { provider: 'google' as const, options: { redirectTo, skipBrowserRedirect: true } };
   const { data, error } = linkToCurrentUser
     ? await supabase.auth.linkIdentity(credentials)

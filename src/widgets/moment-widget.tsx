@@ -25,16 +25,45 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
         style={{
           height: 'match_parent',
           width: 'match_parent',
-          backgroundColor: Brand.gradientStart,
+          backgroundColor: '#FFFFFF',
           borderRadius: 20,
           alignItems: 'center',
           justifyContent: 'center',
           padding: 12,
         }}>
-        <TextWidget text="Unka koi moment nahi abhi 💛" style={{ fontSize: 14, color: '#FFFFFF' }} />
+        <FlexWidget
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 21,
+            backgroundColor: Brand.gradientStart,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <TextWidget text="M" style={{ fontSize: 18, color: '#FFFFFF', fontWeight: 'bold' }} />
+        </FlexWidget>
+        <TextWidget
+          text="No moments yet"
+          style={{ fontSize: 14, color: '#222220', fontWeight: '600', marginTop: 8 }}
+        />
+        <TextWidget text="Open Moments to send one" style={{ fontSize: 11, color: '#6F6F6B', marginTop: 2 }} />
       </FlexWidget>
     );
   }
+
+  const reactions = moment.reactions ?? [];
+  const heart = reactions.find((reaction) => reaction.emoji === '❤️') ?? {
+    emoji: '❤️',
+    count: 0,
+    mine: false,
+  };
+  const primaryReaction = reactions.find((reaction) => reaction.mine) ?? heart;
+  const visibleReactions = [
+    primaryReaction,
+    ...reactions.filter(
+      (reaction) => reaction.emoji !== primaryReaction.emoji && reaction.count > 0
+    ),
+  ];
 
   return (
     <FlexWidget
@@ -42,7 +71,7 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
       style={{
         height: 'match_parent',
         width: 'match_parent',
-        backgroundColor: '#000000',
+        backgroundColor: '#FFFFFF',
         borderRadius: 20,
         flexDirection: 'column',
         overflow: 'hidden',
@@ -61,14 +90,14 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
             style={{
               height: 'match_parent',
               width: 'match_parent',
-              backgroundColor: '#212225',
+              backgroundColor: '#F7F7F5',
               alignItems: 'center',
               justifyContent: 'center',
               padding: 16,
             }}>
             <TextWidget
               text={moment.text ?? ''}
-              style={{ fontSize: 16, color: '#FFFFFF', textAlign: 'center' }}
+              style={{ fontSize: 17, color: '#222220', textAlign: 'center', fontWeight: '500' }}
             />
           </FlexWidget>
         )}
@@ -76,35 +105,105 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
       <FlexWidget
         style={{
           width: 'match_parent',
-          padding: 8,
-          backgroundColor: '#00000099',
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+          backgroundColor: '#FFFFFF',
           flexDirection: 'column',
         }}>
         {moment.photoUri && moment.text ? (
-          <TextWidget text={moment.text} style={{ fontSize: 12, color: '#FFFFFF' }} />
+          <TextWidget
+            text={moment.text}
+            maxLines={2}
+            truncate="END"
+            style={{ fontSize: 12, color: '#222220', fontWeight: '500', marginBottom: 6 }}
+          />
         ) : null}
-        <TextWidget
-          text={`${moment.senderName} · ${timeAgo(moment.createdAt)}`}
-          style={{ fontSize: 11, color: '#FFFFFFCC' }}
-        />
-        <FlexWidget style={{ flexDirection: 'row', flexGap: 4, marginTop: 4 }}>
-          {(moment.reactions ?? []).map((r) => (
+        <FlexWidget
+          style={{
+            width: 'match_parent',
+            height: 40,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}>
+          <FlexWidget style={{ flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
+            <TextWidget
+              text={moment.senderName}
+              maxLines={1}
+              truncate="END"
+              style={{ fontSize: 12, color: '#222220', fontWeight: '600' }}
+            />
+            <TextWidget
+              text={timeAgo(moment.createdAt)}
+              style={{ fontSize: 10, color: '#6F6F6B', marginTop: 1 }}
+            />
+          </FlexWidget>
+          <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', flexGap: 6 }}>
             <FlexWidget
-              key={r.emoji}
-              clickAction={r.emoji}
-              clickActionData={{ emoji: r.emoji, momentId: moment.momentId, pairId: moment.pairId }}
+              clickAction={primaryReaction.emoji}
+              clickActionData={{
+                emoji: primaryReaction.emoji,
+                momentId: moment.momentId,
+                pairId: moment.pairId,
+              }}
               style={{
-                backgroundColor: r.mine ? '#FFFFFF33' : '#FFFFFF14',
-                borderRadius: 10,
-                padding: 4,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: primaryReaction.mine ? '#FFF0ED' : '#F5F5F3',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}>
               <TextWidget
-                text={r.count > 0 ? `${r.emoji}${r.count}` : r.emoji}
-                style={{ fontSize: 12, color: '#FFFFFF' }}
+                text={
+                  primaryReaction.count > 0
+                    ? `${primaryReaction.emoji} ${primaryReaction.count}`
+                    : primaryReaction.emoji
+                }
+                style={{
+                  fontSize: primaryReaction.count > 0 ? 12 : 17,
+                  color: Brand.gradientStart,
+                }}
               />
             </FlexWidget>
-          ))}
+            <FlexWidget
+              clickAction="OPEN_URI"
+              clickActionData={{ uri: 'homescreennotifiers://send-sheet?camera=1' }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: Brand.gradientStart,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <TextWidget text="+" style={{ fontSize: 25, color: '#FFFFFF', fontWeight: '500' }} />
+            </FlexWidget>
+          </FlexWidget>
         </FlexWidget>
+        {visibleReactions.length > 1 ? (
+          <FlexWidget style={{ flexDirection: 'row', flexGap: 4, marginTop: 6 }}>
+            {visibleReactions.slice(1).map((reaction) => (
+              <FlexWidget
+                key={reaction.emoji}
+                clickAction={reaction.emoji}
+                clickActionData={{
+                  emoji: reaction.emoji,
+                  momentId: moment.momentId,
+                  pairId: moment.pairId,
+                }}
+                style={{
+                  backgroundColor: reaction.mine ? '#FFF0ED' : '#F5F5F3',
+                  borderRadius: 12,
+                  padding: 4,
+                }}>
+                <TextWidget
+                  text={`${reaction.emoji}${reaction.count}`}
+                  style={{ fontSize: 12, color: reaction.mine ? Brand.gradientStart : '#222220' }}
+                />
+              </FlexWidget>
+            ))}
+          </FlexWidget>
+        ) : null}
       </FlexWidget>
     </FlexWidget>
   );

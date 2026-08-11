@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { uniqueRealtimeTopic } from '@/lib/realtime';
 import { syncLatestMomentToWidget } from '@/lib/widget-cache';
 
 /** Top-level subscription that keeps the home-screen widget in sync with
@@ -18,7 +19,7 @@ export function useWidgetSync(pairId: string | undefined) {
     syncLatestMomentToWidget(pairId).catch(() => {});
 
     const channel = supabase
-      .channel(`widget-sync-${pairId}`)
+      .channel(uniqueRealtimeTopic(`widget-sync-${pairId}`))
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'moments', filter: `pair_id=eq.${pairId}` },

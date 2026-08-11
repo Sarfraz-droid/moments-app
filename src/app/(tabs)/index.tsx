@@ -1,17 +1,23 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { MotiView } from 'moti';
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, useWindowDimensions, View, type ViewToken } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Easing, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AnimatedPressable } from '@/components/animated-pressable';
 import { BrandHeader } from '@/components/brand-header';
+import { Logo } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radii, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { useMoments } from '@/hooks/use-moments';
 import { useReactions } from '@/hooks/use-reactions';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { REACTION_EMOJIS } from '@/lib/reactions';
 import { getMomentPhotoUrl } from '@/lib/storage';
@@ -20,34 +26,41 @@ import type { Moment, MomentReaction } from '@/lib/types';
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return 'Now';
+  if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
 }
 
 function dayLabel(iso: string) {
-  const d = new Date(iso);
+  const date = new Date(iso);
   const now = new Date();
-  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / (1000 * 60 * 60 * 24));
+  const startOfDay = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'long' });
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
 }
 
-function Avatar({ name, color }: { name: string; color: string }) {
-  const initial = (name || '?').trim().charAt(0).toUpperCase();
+function Avatar({ name, mine }: { name: string; mine: boolean }) {
+  const theme = useTheme();
   return (
-    <View style={[styles.avatar, { backgroundColor: color }]}>
-      <ThemedText style={styles.avatarText}>{initial}</ThemedText>
+    <View
+      style={[
+        styles.avatar,
+        { backgroundColor: mine ? theme.brandSoft : theme.backgroundSelected },
+      ]}>
+      <ThemedText style={[styles.avatarText, { color: mine ? theme.brand : theme.text }]}>
+        {(name || '?').trim().charAt(0).toUpperCase()}
+      </ThemedText>
     </View>
   );
 }
 
-function ReactionBar({
+function ReactionSummary({
   reactions,
   userId,
   onToggle,
@@ -57,38 +70,84 @@ function ReactionBar({
   onToggle: (emoji: string) => void;
 }) {
   const theme = useTheme();
+  const visible = REACTION_EMOJIS.map((emoji) => {
+    const matching = reactions.filter((reaction) => reaction.emoji === emoji);
+    return {
+      emoji,
+      count: matching.length,
+      mine: matching.some((reaction) => reaction.user_id === userId),
+    };
+  }).filter((reaction) => reaction.count > 0);
+
+  if (visible.length === 0) return null;
+
   return (
-    <View style={styles.reactionRow}>
-      {REACTION_EMOJIS.map((emoji) => {
-        const forEmoji = reactions.filter((r) => r.emoji === emoji);
-        const mine = forEmoji.some((r) => r.user_id === userId);
-        const active = forEmoji.length > 0;
-        return (
-          <Pressable
-            key={emoji}
-            onPress={() => onToggle(emoji)}
-            hitSlop={6}
-            style={({ pressed }) => [
-              styles.reactionPill,
-              {
-                backgroundColor: mine ? theme.brand : active ? theme.backgroundElement : theme.background,
-                borderColor: mine ? theme.brand : theme.divider,
-                transform: [{ scale: pressed ? 0.9 : 1 }],
-              },
-            ]}>
-            <ThemedText
-              style={{
-                fontSize: 14,
-                color: mine ? '#fff' : theme.text,
-                fontWeight: mine ? 700 : 500,
-              }}>
-              {emoji}
-              {active ? `  ${forEmoji.length}` : ''}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
+    <View style={styles.reactionSummary}>
+      {visible.map(({ emoji, count, mine }) => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${emoji} reaction, ${count}`}
+          hitSlop={8}
+          key={emoji}
+          onPress={() => onToggle(emoji)}
+          style={[
+            styles.reactionCount,
+            {
+              backgroundColor: mine ? theme.brandSoft : theme.backgroundElement,
+              borderColor: mine ? theme.brand : theme.divider,
+            },
+          ]}>
+          <ThemedText type="small" style={styles.reactionCountText}>
+            {emoji} {count}
+          </ThemedText>
+        </Pressable>
+      ))}
     </View>
+  );
+}
+
+function ReactionTray({
+  onChoose,
+  selectedIndex,
+  width,
+}: {
+  onChoose: (emoji: string) => void;
+  selectedIndex: number | null;
+  width: number;
+}) {
+  const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+
+  return (
+    <MotiView
+      from={{ opacity: 0, translateY: reducedMotion ? 0 : 8, scale: reducedMotion ? 1 : 0.96 }}
+      animate={{ opacity: 1, translateY: 0, scale: 1 }}
+      transition={reducedMotion ? { type: 'timing', duration: 0 } : { type: 'spring', damping: 18 }}
+      style={[
+        styles.reactionTray,
+        { width, backgroundColor: theme.background, borderColor: theme.divider },
+      ]}>
+      {REACTION_EMOJIS.map((emoji, index) => (
+        <AnimatedPressable
+          accessibilityLabel={`React with ${emoji}`}
+          accessibilityRole="button"
+          key={emoji}
+          onPress={() => onChoose(emoji)}
+          style={[
+            styles.reactionChoice,
+            selectedIndex === index && { backgroundColor: theme.brandSoft },
+          ]}>
+          <MotiView
+            animate={{
+              scale: selectedIndex === index && !reducedMotion ? 1.55 : 1,
+              translateY: selectedIndex === index && !reducedMotion ? -7 : 0,
+            }}
+            transition={{ type: 'timing', duration: reducedMotion ? 0 : 140, easing: Easing.out(Easing.cubic) }}>
+            <ThemedText style={styles.reactionEmoji}>{emoji}</ThemedText>
+          </MotiView>
+        </AnimatedPressable>
+      ))}
+    </MotiView>
   );
 }
 
@@ -96,7 +155,6 @@ function MomentCard({
   moment,
   isMe,
   senderName,
-  partnerName,
   userId,
   reactions,
   onToggleReaction,
@@ -104,205 +162,268 @@ function MomentCard({
   moment: Moment;
   isMe: boolean;
   senderName: string;
-  partnerName: string;
   userId: string | undefined;
   reactions: MomentReaction[];
   onToggleReaction: (momentId: string, emoji: string) => void;
 }) {
   const theme = useTheme();
+  const { width } = useWindowDimensions();
   const [url, setUrl] = useState<string | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const trayWidth = Math.min(width - Spacing.four, 336);
 
   useEffect(() => {
     let cancelled = false;
-    if (moment.storage_path) {
-      getMomentPhotoUrl(moment.storage_path)
-        .then((u) => !cancelled && setUrl(u))
-        .catch(() => !cancelled && setUrl(null));
-    }
+    if (!moment.storage_path) return;
+    getMomentPhotoUrl(moment.storage_path)
+      .then((nextUrl) => !cancelled && setUrl(nextUrl))
+      .catch(() => !cancelled && setUrl(null));
     return () => {
       cancelled = true;
     };
-  }, [moment]);
+  }, [moment.storage_path]);
 
   const hasPhoto = Boolean(moment.storage_path);
-  const hasText = Boolean(moment.text && moment.text.trim().length > 0);
-  // Notes-only moments get the warm sticky-note treatment;
-  // photo+text gets a polaroid; photo-only gets a clean print.
-  const variant: 'polaroid' | 'sticky' | 'print' = !hasPhoto && hasText
-    ? 'sticky'
-    : hasPhoto && hasText
-      ? 'polaroid'
-      : 'print';
+  const hasText = Boolean(moment.text?.trim());
+  const myReaction = reactions.find((reaction) => reaction.user_id === userId);
+  const hasMyHeart = myReaction?.emoji === '❤️';
+
+  const chooseReaction = useCallback((emoji: string) => {
+    onToggleReaction(moment.id, emoji);
+    setPickerVisible(false);
+    setSelectedIndex(null);
+  }, [moment.id, onToggleReaction]);
+
+  const reactionIndexForX = useCallback((absoluteX: number) => {
+    const horizontalInset = Spacing.two;
+    const index = Math.floor((absoluteX - horizontalInset) / (trayWidth / REACTION_EMOJIS.length));
+    return Math.max(0, Math.min(REACTION_EMOJIS.length - 1, index));
+  }, [trayWidth]);
+
+  const beginReactionGesture = useCallback((absoluteX: number) => {
+    setPickerVisible(true);
+    setSelectedIndex(reactionIndexForX(absoluteX));
+  }, [reactionIndexForX]);
+
+  const moveReactionGesture = useCallback((absoluteX: number) => {
+    setSelectedIndex(reactionIndexForX(absoluteX));
+  }, [reactionIndexForX]);
+
+  const finishReactionGesture = useCallback((absoluteX: number) => {
+    chooseReaction(REACTION_EMOJIS[reactionIndexForX(absoluteX)]);
+  }, [chooseReaction, reactionIndexForX]);
+
+  const cancelReactionGesture = useCallback(() => {
+    setPickerVisible(false);
+    setSelectedIndex(null);
+  }, []);
+
+  const holdAndSlideGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activateAfterLongPress(240)
+        .onStart((event) => runOnJS(beginReactionGesture)(event.absoluteX))
+        .onUpdate((event) => runOnJS(moveReactionGesture)(event.absoluteX))
+        .onEnd((event) => runOnJS(finishReactionGesture)(event.absoluteX))
+        .onFinalize((_event, success) => {
+          if (!success) runOnJS(cancelReactionGesture)();
+        }),
+    [beginReactionGesture, cancelReactionGesture, finishReactionGesture, moveReactionGesture]
+  );
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 18 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: 'timing', duration: 320 }}
-      style={styles.cardWrap}>
-      <View style={styles.cardHeader}>
-        <Avatar name={senderName} color={isMe ? theme.brand : theme.glow} />
-        <View style={{ flex: 1 }}>
-          <ThemedText type="smallBold" style={styles.senderName}>
-            {isMe ? 'You' : partnerName || senderName}
-          </ThemedText>
+    <View style={[styles.moment, { borderBottomColor: theme.divider }]}>
+      <View style={styles.momentHeader}>
+        <Avatar name={senderName} mine={isMe} />
+        <View style={styles.senderBlock}>
+          <ThemedText type="smallBold">{isMe ? 'You' : senderName}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={styles.timeText}>
             {timeAgo(moment.created_at)}
           </ThemedText>
         </View>
       </View>
 
-      <View
-        style={[
-          variant === 'sticky' ? styles.stickyCard : styles.polaroidCard,
-          {
-            backgroundColor: variant === 'sticky' ? theme.note : theme.backgroundElement,
-            transform: [{ rotate: variant === 'sticky' ? '-0.6deg' : '0.4deg' }],
-          },
-        ]}>
+      <Pressable
+        accessibilityActions={[{ name: 'activate', label: 'Show reactions' }]}
+        accessibilityHint="Long press to react"
+        accessibilityLabel={`${isMe ? 'Your' : `${senderName}'s`} moment`}
+        delayLongPress={260}
+        onAccessibilityAction={() => setPickerVisible(true)}
+        onLongPress={() => setPickerVisible(true)}>
         {hasPhoto ? (
           url ? (
-            <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
+            <Image source={{ uri: url }} style={styles.photo} contentFit="cover" transition={180} />
           ) : (
-            <View style={[styles.photo, styles.photoLoading]} />
+            <View style={[styles.photo, { backgroundColor: theme.backgroundElement }]} />
           )
-        ) : null}
-        {hasText ? (
-          <ThemedText
-            style={[
-              variant === 'sticky' ? styles.stickyText : styles.polaroidCaption,
-              { color: variant === 'sticky' ? theme.noteInk : theme.text },
-            ]}>
-            {moment.text}
-          </ThemedText>
-        ) : null}
-      </View>
+        ) : (
+          <View style={[styles.noteMoment, { backgroundColor: theme.note, borderColor: theme.divider }]}>
+            <ThemedText style={[styles.noteText, { color: theme.noteInk }]}>{moment.text}</ThemedText>
+          </View>
+        )}
+      </Pressable>
 
-      <ReactionBar
-        reactions={reactions}
-        userId={userId}
-        onToggle={(emoji) => onToggleReaction(moment.id, emoji)}
-      />
-    </MotiView>
+      {hasPhoto && hasText ? <ThemedText style={styles.caption}>{moment.text}</ThemedText> : null}
+
+      <View style={styles.reactionDock}>
+        {pickerVisible ? (
+          <ReactionTray onChoose={chooseReaction} selectedIndex={selectedIndex} width={trayWidth} />
+        ) : null}
+        <View style={styles.reactionFooter}>
+          <GestureDetector gesture={holdAndSlideGesture}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityHint="Tap to send a heart, or press and hold then slide to choose another reaction"
+              accessibilityLabel={myReaction ? `Your reaction is ${myReaction.emoji}` : 'Heart or react to this moment'}
+              hitSlop={10}
+              onPress={() => chooseReaction(myReaction?.emoji ?? '❤️')}
+              style={[
+                styles.reactButton,
+                (pickerVisible || myReaction) && { backgroundColor: theme.brandSoft },
+              ]}>
+              {myReaction && !hasMyHeart ? (
+                <MotiView
+                  from={{ scale: 0.75 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 15 }}>
+                  <ThemedText style={styles.selectedReactionEmoji}>{myReaction.emoji}</ThemedText>
+                </MotiView>
+              ) : (
+                <SymbolView
+                  name={{
+                    ios: hasMyHeart ? 'heart.fill' : 'heart',
+                    android: hasMyHeart ? 'favorite' : 'favorite_border',
+                    web: hasMyHeart ? 'favorite' : 'favorite_border',
+                  }}
+                  size={22}
+                  tintColor={pickerVisible || hasMyHeart ? theme.brand : theme.textSecondary}
+                  fallback={<ThemedText type="small">Heart</ThemedText>}
+                />
+              )}
+            </Pressable>
+          </GestureDetector>
+          <ReactionSummary reactions={reactions} userId={userId} onToggle={chooseReaction} />
+        </View>
+      </View>
+    </View>
   );
 }
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <View style={styles.sectionRow}>
-      <View style={styles.sectionLine} />
-      <ThemedText type="small" themeColor="textSecondary" style={styles.sectionLabel}>
-        {label}
-      </ThemedText>
-      <View style={styles.sectionLine} />
-    </View>
+    <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
+      {label}
+    </ThemedText>
   );
 }
 
+type FeedRow =
+  | { type: 'section'; key: string; label: string }
+  | { type: 'moment'; key: string; moment: Moment };
+
+const FEED_VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 18 };
+
 export default function FeedScreen() {
   const { session, pair, partnerProfile, profile } = useAuth();
+  const theme = useTheme();
   const { moments, loading, refresh } = useMoments(pair?.id);
   const { reactions, react } = useReactions(pair?.id);
-  const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken<FeedRow>[] }) => {
+      setVisibleKeys(new Set(viewableItems.map(({ item }) => item.key)));
+    },
+    []
+  );
 
-  const partnerName = partnerProfile?.display_name || 'your person';
+  const partnerName = partnerProfile?.display_name || 'Your person';
   const myName = profile?.display_name || 'You';
 
-  // Group moments by day for the section labels
-  const grouped = useMemo(() => {
-    const out: { day: string; items: Moment[] }[] = [];
-    for (const m of moments) {
-      const day = dayLabel(m.created_at);
-      const last = out[out.length - 1];
-      if (last && last.day === day) last.items.push(m);
-      else out.push({ day, items: [m] });
-    }
-    return out;
-  }, [moments]);
-
   const flatData = useMemo(() => {
-    const rows: ({ type: 'section'; key: string; label: string } | { type: 'moment'; key: string; moment: Moment })[] = [];
-    for (const g of grouped) {
-      rows.push({ type: 'section', key: `s-${g.day}`, label: g.day });
-      for (const m of g.items) rows.push({ type: 'moment', key: `m-${m.id}`, moment: m });
+    const rows: FeedRow[] = [];
+    let currentDay = '';
+    for (const moment of moments) {
+      const day = dayLabel(moment.created_at);
+      if (day !== currentDay) {
+        rows.push({ type: 'section', key: `section-${day}`, label: day });
+        currentDay = day;
+      }
+      rows.push({ type: 'moment', key: `moment-${moment.id}`, moment });
     }
     return rows;
-  }, [grouped]);
+  }, [moments]);
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.headerWrap}>
+        <View style={[styles.headerWrap, { borderBottomColor: theme.divider }]}>
           <BrandHeader
-            subtitle={pair ? `with ${partnerName}` : undefined}
-            trailing={profile?.display_name ? 'Me' : undefined}
-            onTrailingPress={() => router.push('/account')}
+            subtitle={pair ? partnerName : undefined}
           />
         </View>
 
         <FlatList
           data={flatData}
-          keyExtractor={(r) => r.key}
-          contentContainerStyle={styles.listContent}
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={[styles.listContent, flatData.length === 0 && styles.emptyList]}
           onRefresh={refresh}
           refreshing={loading}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={FEED_VIEWABILITY_CONFIG}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             !loading ? (
-              <MotiView
-                from={{ opacity: 0, translateY: 10 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'timing', duration: 400 }}
-                style={styles.emptyWrap}>
-                <View style={styles.emptyStack}>
-                  <View
-                    style={[
-                      styles.emptyPolaroid,
-                      { backgroundColor: theme.backgroundElement, transform: [{ rotate: '-8deg' }] },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.emptyPolaroid,
-                      {
-                        backgroundColor: theme.note,
-                        transform: [{ rotate: '5deg' }, { translateY: -10 }],
-                      },
-                    ]}>
-                    <ThemedText style={{ color: theme.noteInk, fontSize: 13 }}>💛</ThemedText>
-                  </View>
-                  <View
-                    style={[
-                      styles.emptyPolaroid,
-                      { backgroundColor: '#fff', transform: [{ rotate: '-2deg' }, { translateY: -20 }] },
-                    ]}>
-                    <ThemedText style={{ fontSize: 12, color: theme.text }}>+</ThemedText>
-                  </View>
-                </View>
-                <ThemedText type="display" style={styles.emptyTitle}>
-                  Your story{'\n'}starts here
-                </ThemedText>
+              <View style={styles.emptyWrap}>
+                <Logo size={56} />
+                <ThemedText type="title" style={styles.emptyTitle}>Share your first moment</ThemedText>
                 <ThemedText themeColor="textSecondary" style={styles.emptySub}>
-                  Send the first moment from the Send tab — a photo, a note, anything for {partnerName}.
+                  Send a photo or note to {partnerName}. It will appear here and on their home screen.
                 </ThemedText>
-              </MotiView>
+                <AnimatedPressable
+                  onPress={() => router.push('/send-sheet')}
+                  style={styles.emptyAction}>
+                  <ThemedText type="smallBold" style={styles.emptyActionText}>Send a moment</ThemedText>
+                </AnimatedPressable>
+              </View>
             ) : null
           }
           renderItem={({ item }) => {
-            if (item.type === 'section') return <SectionLabel label={item.label} />;
-            const m = item.moment;
+            const visible = visibleKeys.size === 0 || visibleKeys.has(item.key);
+            if (item.type === 'section') {
+              return (
+                <MotiView
+                  animate={{ opacity: visible || reducedMotion ? 1 : 0.25 }}
+                  transition={{ type: 'timing', duration: reducedMotion ? 0 : 180 }}>
+                  <SectionLabel label={item.label} />
+                </MotiView>
+              );
+            }
+            const moment = item.moment;
+            const isMe = moment.sender_id === session?.user.id;
             return (
-              <MomentCard
-                moment={m}
-                isMe={m.sender_id === session?.user.id}
-                senderName={m.sender_id === session?.user.id ? myName : partnerName}
-                partnerName={partnerName}
-                userId={session?.user.id}
-                reactions={reactions.filter((r) => r.moment_id === m.id)}
-                onToggleReaction={(momentId, emoji) => {
-                  if (session) react(momentId, session.user.id, emoji);
+              <MotiView
+                animate={{
+                  opacity: visible || reducedMotion ? 1 : 0.18,
+                  translateY: visible || reducedMotion ? 0 : 8,
                 }}
-              />
+                transition={{
+                  type: 'timing',
+                  duration: reducedMotion ? 0 : visible ? 260 : 180,
+                  easing: Easing.out(Easing.cubic),
+                }}>
+                <MomentCard
+                  moment={moment}
+                  isMe={isMe}
+                  senderName={isMe ? myName : partnerName}
+                  userId={session?.user.id}
+                  reactions={reactions.filter((reaction) => reaction.moment_id === moment.id)}
+                  onToggleReaction={(momentId, emoji) => {
+                    if (session) react(momentId, session.user.id, emoji);
+                  }}
+                />
+              </MotiView>
             );
           }}
         />
@@ -315,138 +436,119 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
   headerWrap: {
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
-    paddingBottom: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  listContent: {
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
-    paddingBottom: Spacing.six + 40,
-    gap: Spacing.four,
-  },
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    marginTop: Spacing.two,
-  },
-  sectionLine: { flex: 1, height: 1, backgroundColor: '#00000010' },
+  listContent: { paddingBottom: Spacing.six + 48 },
+  emptyList: { flexGrow: 1 },
   sectionLabel: {
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    fontSize: 11,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.two,
+    fontSize: 13,
   },
-  cardWrap: {
-    gap: Spacing.two,
+  moment: {
+    paddingBottom: Spacing.three,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  cardHeader: {
+  momentHeader: {
+    minHeight: 58,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    paddingLeft: Spacing.one,
+    paddingHorizontal: Spacing.three,
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: 14,
-  },
-  senderName: { fontSize: 13 },
-  timeText: { fontSize: 11, marginTop: 1 },
-  polaroidCard: {
+  avatarText: { fontSize: 14, fontWeight: '800' },
+  senderBlock: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.two },
+  timeText: { fontSize: 12 },
+  photo: { width: '100%', aspectRatio: 1 },
+  noteMoment: {
+    minHeight: 170,
+    marginHorizontal: Spacing.three,
     borderRadius: Radii.md,
-    padding: Spacing.two,
+    borderWidth: 1,
+    padding: Spacing.four,
+    justifyContent: 'center',
+  },
+  noteText: { fontSize: 21, lineHeight: 30, fontWeight: '500' },
+  caption: { paddingHorizontal: Spacing.three, paddingTop: Spacing.three },
+  reactionFooter: {
+    minHeight: 44,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
-    shadowColor: '#000',
+  },
+  reactionDock: { position: 'relative', zIndex: 5 },
+  reactionSummary: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one, flex: 1 },
+  reactionCount: {
+    minHeight: 32,
+    minWidth: 44,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionCountText: { fontSize: 13 },
+  reactButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionTray: {
+    position: 'absolute',
+    left: Spacing.two,
+    bottom: 46,
+    paddingHorizontal: Spacing.two,
+    minHeight: 58,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 6,
+    shadowRadius: 20,
+    elevation: 5,
   },
-  stickyCard: {
-    borderRadius: Radii.sm,
-    padding: Spacing.four,
-    gap: Spacing.two,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  photo: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: Spacing.two,
-  },
-  photoLoading: {
-    backgroundColor: '#00000015',
-  },
-  polaroidCaption: {
-    fontSize: 16,
-    lineHeight: 22,
-    paddingHorizontal: Spacing.one,
-    paddingBottom: Spacing.two,
-  },
-  stickyText: {
-    fontFamily: undefined,
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: 500,
-  },
-  reactionRow: {
-    flexDirection: 'row',
-    gap: Spacing.one,
-    paddingLeft: Spacing.one,
-    marginTop: Spacing.one,
-  },
-  reactionPill: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: 999,
-    borderWidth: 1,
-    minWidth: 36,
+  reactionChoice: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: Radii.md,
     alignItems: 'center',
+    justifyContent: 'center',
   },
+  reactionEmoji: { fontSize: 24 },
+  selectedReactionEmoji: { fontSize: 21, lineHeight: 26 },
   emptyWrap: {
+    flex: 1,
     alignItems: 'center',
-    paddingTop: Spacing.six,
-    paddingHorizontal: Spacing.four,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.five,
     gap: Spacing.three,
   },
-  emptyStack: {
-    width: 200,
-    height: 140,
+  emptyTitle: { textAlign: 'center' },
+  emptySub: { textAlign: 'center', maxWidth: 340 },
+  emptyAction: {
+    minHeight: 48,
+    paddingHorizontal: Spacing.four,
+    borderRadius: Radii.md,
+    backgroundColor: '#F05D4E',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.three,
+    marginTop: Spacing.two,
   },
-  emptyPolaroid: {
-    position: 'absolute',
-    width: 110,
-    height: 130,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  emptyTitle: {
-    textAlign: 'center',
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  emptySub: {
-    textAlign: 'center',
-    maxWidth: 320,
-  },
+  emptyActionText: { color: '#FFFFFF' },
 });

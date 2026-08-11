@@ -45,7 +45,7 @@ export async function redrawMomentWidget() {
   });
 }
 
-async function clearWidget() {
+export async function clearMomentWidget() {
   await AsyncStorage.removeItem(KEY);
   await redrawMomentWidget();
 }
@@ -79,7 +79,7 @@ export async function syncLatestMomentToWidget(pairId: string) {
     .limit(1)
     .maybeSingle();
   if (!moment) {
-    await clearWidget();
+    await clearMomentWidget();
     return;
   }
 

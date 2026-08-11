@@ -11,7 +11,7 @@ export function AddMomentWidget() {
   return (
     <FlexWidget
       clickAction="OPEN_URI"
-      clickActionData={{ uri: 'homescreennotifiers://send' }}
+      clickActionData={{ uri: 'homescreennotifiers://send-sheet?camera=1' }}
       style={{
         height: 'match_parent',
         width: 'match_parent',
@@ -21,10 +21,10 @@ export function AddMomentWidget() {
         justifyContent: 'center',
         padding: 12,
       }}>
-      <TextWidget text="💌" style={{ fontSize: 28 }} />
+      <TextWidget text="+" style={{ fontSize: 32, color: '#FFFFFF', fontWeight: '500' }} />
       <TextWidget
         text="Send a moment"
-        style={{ fontSize: 13, color: '#FFFFFF', textAlign: 'center', marginTop: 4 }}
+        style={{ fontSize: 12, color: '#FFFFFF', textAlign: 'center', marginTop: 2, fontWeight: '600' }}
       />
     </FlexWidget>
   );

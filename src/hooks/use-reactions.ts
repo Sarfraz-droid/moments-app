@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { uniqueRealtimeTopic } from '@/lib/realtime';
 import type { MomentReaction } from '@/lib/types';
 
 export function useReactions(pairId: string | undefined) {
@@ -16,13 +17,14 @@ export function useReactions(pairId: string | undefined) {
   }, [pairId]);
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(() => void load(), 0);
+    return () => clearTimeout(timer);
   }, [load]);
 
   useEffect(() => {
     if (!pairId) return;
     const channel = supabase
-      .channel(`moment-reactions-${pairId}`)
+      .channel(uniqueRealtimeTopic(`moment-reactions-${pairId}`))
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'moment_reactions', filter: `pair_id=eq.${pairId}` },

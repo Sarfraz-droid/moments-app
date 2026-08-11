@@ -33,43 +33,44 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
 const styles = StyleSheet.create({
   small: {
+    fontFamily: Fonts.sans,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: 500,
   },
   smallBold: {
+    fontFamily: Fonts.semibold,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: 700,
   },
   default: {
+    fontFamily: Fonts.sans,
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: 500,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 600,
-    lineHeight: 38,
-    letterSpacing: -0.5,
+    fontFamily: Fonts.bold,
+    fontSize: 30,
+    lineHeight: 36,
+    letterSpacing: -0.7,
   },
   display: {
-    fontFamily: Fonts.serif,
-    fontSize: 36,
-    fontWeight: 600,
-    lineHeight: 42,
-    letterSpacing: -0.8,
+    fontSize: 34,
+    fontFamily: Fonts.bold,
+    lineHeight: 40,
+    letterSpacing: -0.9,
   },
   subtitle: {
+    fontFamily: Fonts.semibold,
     fontSize: 20,
     lineHeight: 28,
-    fontWeight: 600,
   },
   link: {
+    fontFamily: Fonts.medium,
     lineHeight: 30,
     fontSize: 14,
   },
   linkPrimary: {
+    fontFamily: Fonts.medium,
     lineHeight: 30,
     fontSize: 14,
     color: '#3c87f7',

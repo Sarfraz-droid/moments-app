@@ -3,8 +3,9 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { uniqueRealtimeTopic } from '@/lib/realtime';
 import type { Pair, Profile } from '@/lib/types';
-import { WIDGET_PAIR_ID_KEY } from '@/lib/widget-cache';
+import { clearMomentWidget, WIDGET_PAIR_ID_KEY } from '@/lib/widget-cache';
 
 type AuthContextValue = {
   loading: boolean;
@@ -17,6 +18,7 @@ type AuthContextValue = {
   createPair: () => Promise<Pair>;
   joinPair: (inviteCode: string) => Promise<Pair>;
   refreshPair: () => Promise<void>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -101,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
         setPair(null);
+        setPartnerProfile(null);
       }
     });
 
@@ -117,27 +120,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pair]);
 
   useEffect(() => {
-    if (!pair || pair.status !== 'active' || !session) {
-      setPartnerProfile(null);
-      return;
-    }
-    const partnerId = pair.user_a === session.user.id ? pair.user_b : pair.user_a;
-    if (!partnerId) {
-      setPartnerProfile(null);
-      return;
-    }
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', partnerId)
-      .maybeSingle()
-      .then(({ data }) => setPartnerProfile((data as Profile) ?? null));
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (!pair || pair.status !== 'active' || !session) {
+        if (!cancelled) setPartnerProfile(null);
+        return;
+      }
+      const partnerId = pair.user_a === session.user.id ? pair.user_b : pair.user_a;
+      if (!partnerId) {
+        if (!cancelled) setPartnerProfile(null);
+        return;
+      }
+      const { data } = await supabase.from('profiles').select('*').eq('id', partnerId).maybeSingle();
+      if (!cancelled) setPartnerProfile((data as Profile) ?? null);
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [pair, session]);
 
   useEffect(() => {
     if (!pair || pair.status === 'active') return;
     const channel = supabase
-      .channel(`pair-${pair.id}`)
+      .channel(uniqueRealtimeTopic(`pair-${pair.id}`))
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'pairs', filter: `id=eq.${pair.id}` },
@@ -203,6 +209,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadPair(session.user.id);
   }, [session, loadPair]);
 
+  const logout = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    await AsyncStorage.removeItem(WIDGET_PAIR_ID_KEY);
+    await clearMomentWidget();
+  }, []);
+
   const value = useMemo(
     () => ({
       loading,
@@ -215,6 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createPair,
       joinPair,
       refreshPair,
+      logout,
     }),
     [
       loading,
@@ -227,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       createPair,
       joinPair,
       refreshPair,
+      logout,
     ]
   );
 
