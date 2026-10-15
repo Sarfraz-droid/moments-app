@@ -1,0 +1,72 @@
+{
+  "title": "Choose the new Moments visual world",
+  "question": "I recommend Proof Sheet for the simplest, most content-led experience. Keep it, choose an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned-proof-sheet",
+      "label": "Proof Sheet",
+      "kicker": "RECOMMENDED",
+      "lineage": "photo-lab contact sheets and grease-pencil selects",
+      "thesis": "A shared roll for two, where every moment reads as the one frame worth keeping.",
+      "palette": ["#F7F7F4", "#191918", "#E9E9E4", "#F05D4E"],
+      "materials": ["matte photo paper", "registration marks", "one coral select mark"],
+      "viewport": "A quiet title row leads into one generous latest moment, with compact sender context and only real reactions visible; long-press opens a native reaction sheet.",
+      "risk": "Can feel clinical if the spacing, copy, and select mark do not carry enough warmth.",
+      "sketch": ".impeccable/sketches/proof-sheet.png"
+    },
+    {
+      "id": "challenger-botanical",
+      "label": "Seasonal Folio",
+      "lineage": "fixed-scale botanical life-stage plates",
+      "thesis": "The relationship unfolds as a sequence of carefully observed daily changes.",
+      "palette": ["#F2E9D8", "#24382C", "#A83B32", "#2B2723"],
+      "materials": ["folio paper", "specimen labels", "registered overlays"],
+      "viewport": "A single moment sits like a specimen plate, with date and sender annotations aligned beneath it.",
+      "risk": "Fuses partially because life stages imply progression the product does not actually track.",
+      "case": "High emotional recognition, but lower product clarity than Proof Sheet.",
+      "sketch": ".impeccable/sketches/seasonal-folio.png",
+      "hero": "https://impeccable.style/worlds/cards/editorial-sequence-montage-botanical-folio-season-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/editorial-sequence-montage-botanical-folio-season.webp"
+    },
+    {
+      "id": "challenger-sneaker-archive",
+      "label": "Memory Box",
+      "lineage": "stacked archive boxes with indexed end labels",
+      "thesis": "Moments become a tactile private archive that opens one memory at a time.",
+      "palette": ["#C86232", "#181512", "#F8F3E8", "#6B8C8A"],
+      "materials": ["box board", "tissue paper", "index labels"],
+      "viewport": "The latest moment slides from a compact labeled stack, while older moments remain indexed below.",
+      "risk": "Fuses poorly because archive-box navigation makes an immediate sharing tool feel stored and collectible.",
+      "case": "Distinctive structure, but weaker immediacy and couple identification.",
+      "sketch": ".impeccable/sketches/memory-box.png",
+      "hero": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-sneaker-box-stacks-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-sneaker-box-stacks.webp"
+    },
+    {
+      "id": "challenger-teletext",
+      "label": "Private Broadcast",
+      "lineage": "three-digit teletext magazines on a fixed character grid",
+      "thesis": "Each new moment arrives like a private broadcast intended for one viewer.",
+      "palette": ["#080808", "#F3F3EF", "#43D5D0", "#F2D348"],
+      "materials": ["pixel grid", "block mosaic", "broadcast index"],
+      "viewport": "A numbered latest-moment page fills the screen with direct SEND and REACT states on the fixed grid.",
+      "risk": "Fuses poorly because its broadcast character overwhelms intimacy and native familiarity.",
+      "case": "Very clear state, but far lower emotional identification than Proof Sheet.",
+      "sketch": ".impeccable/sketches/private-broadcast.png",
+      "hero": "https://impeccable.style/worlds/cards/broadcast-programming-teletext-service-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/broadcast-programming-teletext-service.webp"
+    }
+  ],
+  "reroll": true,
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A polished private photo feed with rounded cards, a familiar bottom bar, and restrained branding.",
+    "palette": ["#FFFFFF", "#171717", "#F1F1F1", "#FF6E61"],
+    "materials": ["flat cards", "system controls", "soft separators"],
+    "viewport": "A conventional app bar, chronological card feed, and persistent compose destination.",
+    "risk": "Immediately familiar, but less memorable and less specific to Moments.",
+    "sketch": ".impeccable/sketches/canon.png"
+  },
+  "steer": true
+}

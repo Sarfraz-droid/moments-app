@@ -1,0 +1,17 @@
+{
+  "prompt": "High-fidelity portrait native composition for the Moments home feed: Instagram-level familiarity and polish, simpler and private for two partners; slim app bar, chronological media-first feed, full-width photo, compact sender and time, caption, only existing reactions, Home and Send native navigation; white, near-black, neutral gray and coral; no heavy shadows, gradients, glass, public metrics, comments, follower UI, or persistent reaction picker.",
+  "approved": true,
+  "approval": "Delegated by the user with: Implement it, like Instagram.",
+  "carryForward": [
+    "media-first chronological feed",
+    "slim native app bar",
+    "full-width photo moments",
+    "compact sender, time, caption, and actual reactions",
+    "standard Home and Send navigation"
+  ],
+  "doNotLiteralize": [
+    "sample people and photos",
+    "public social metrics",
+    "comments, follower UI, or overflow actions"
+  ]
+}

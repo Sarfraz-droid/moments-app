@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthGate } from '@/components/auth-gate';
+import { Colors } from '@/constants/theme';
 import { AuthProvider } from '@/lib/auth-context';
 
 /*
@@ -27,6 +28,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const palette = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -42,9 +44,24 @@ export default function RootLayout() {
         <AnimatedSplashOverlay />
         <AuthProvider>
           <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'default',
+                gestureEnabled: true,
+                contentStyle: { backgroundColor: palette.background },
+              }}>
               <Stack.Screen
                 name="send-sheet"
+                options={{
+                  presentation: 'fullScreenModal',
+                  animation: 'slide_from_bottom',
+                  animationTypeForReplace: 'push',
+                  gestureDirection: 'vertical',
+                }}
+              />
+              <Stack.Screen
+                name="comments-sheet"
                 options={{
                   presentation: 'formSheet',
                   sheetAllowedDetents: [0.96],
@@ -53,8 +70,28 @@ export default function RootLayout() {
                   sheetCornerRadius: 28,
                 }}
               />
-              <Stack.Screen name="camera" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-              <Stack.Screen name="account" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+              <Stack.Screen
+                name="music-search-sheet"
+                options={{
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: [0.96],
+                  sheetInitialDetentIndex: 0,
+                  sheetGrabberVisible: true,
+                  sheetCornerRadius: 28,
+                }}
+              />
+              <Stack.Screen
+                name="camera"
+                options={{
+                  presentation: 'fullScreenModal',
+                  animation: 'slide_from_bottom',
+                  gestureDirection: 'vertical',
+                }}
+              />
+              <Stack.Screen
+                name="account"
+                options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
+              />
             </Stack>
           </AuthGate>
         </AuthProvider>

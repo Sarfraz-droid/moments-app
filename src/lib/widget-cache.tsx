@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 import { REACTION_EMOJIS } from '@/lib/reactions';
-import { getMomentPhotoForWidget } from '@/lib/storage';
+import { getMomentPhotoForWidget, getMomentVideoThumbnailForWidget } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 
 export type WidgetReactionSummary = {
@@ -15,11 +15,17 @@ export type WidgetMoment = {
   momentId: string;
   pairId: string;
   text: string | null;
-  // Local file URI when caching succeeds, otherwise a signed HTTPS URL.
+  // Local file URI when caching succeeds, otherwise a signed HTTPS URL. For
+  // video moments this is a still thumbnail frame, not the video itself —
+  // RemoteViews widgets can't animate anything, only show a static image.
   photoUri: string | null;
+  isVideo: boolean;
   senderName: string;
   createdAt: string;
   reactions: WidgetReactionSummary[];
+  // Widgets can't play audio, so this is only ever shown as a small badge —
+  // opening the app is required to actually hear the attached track.
+  trackTitle: string | null;
 };
 
 const KEY = 'widget:latest-moment';
@@ -72,7 +78,7 @@ export async function syncLatestMomentToWidget(pairId: string) {
 
   const { data: moment } = await supabase
     .from('moments')
-    .select('id, text, storage_path, created_at, sender_id')
+    .select('id, text, storage_path, created_at, sender_id, track_title, type')
     .eq('pair_id', pairId)
     .neq('sender_id', user.id)
     .order('created_at', { ascending: false })
@@ -89,9 +95,12 @@ export async function syncLatestMomentToWidget(pairId: string) {
     .eq('id', moment.sender_id)
     .maybeSingle();
 
+  const isVideo = moment.type === 'video';
   let photoUri: string | null = null;
   if (moment.storage_path) {
-    photoUri = await getMomentPhotoForWidget(moment.storage_path, moment.id);
+    photoUri = isVideo
+      ? await getMomentVideoThumbnailForWidget(moment.storage_path, moment.id)
+      : await getMomentPhotoForWidget(moment.storage_path, moment.id);
   }
 
   const reactions = await summarizeReactions(moment.id, user.id);
@@ -101,9 +110,11 @@ export async function syncLatestMomentToWidget(pairId: string) {
     pairId,
     text: moment.text,
     photoUri,
+    isVideo,
     senderName: sender?.display_name ?? 'Someone',
     createdAt: moment.created_at,
     reactions,
+    trackTitle: moment.track_title,
   });
 
   await redrawMomentWidget();

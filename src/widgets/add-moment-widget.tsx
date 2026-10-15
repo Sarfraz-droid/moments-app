@@ -11,7 +11,7 @@ export function AddMomentWidget() {
   return (
     <FlexWidget
       clickAction="OPEN_URI"
-      clickActionData={{ uri: 'homescreennotifiers://send-sheet?camera=1' }}
+      clickActionData={{ uri: 'homescreennotifiers://camera' }}
       style={{
         height: 'match_parent',
         width: 'match_parent',

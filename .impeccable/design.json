@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-10T21:44:48Z",
+  "title": "Design System: Moments",
+  "extensions": {
+    "colorMeta": {
+      "light-background": { "role": "neutral", "displayName": "Clear Canvas", "canonical": "#FFFFFF", "tonalRamp": ["#0B0B0B", "#262626", "#454545", "#666666", "#898989", "#AEAEAE", "#D4D4D4", "#EEEEEE"] },
+      "light-surface": { "role": "neutral", "displayName": "Soft Stone", "canonical": "#F5F5F3", "tonalRamp": ["#0B0B0A", "#262625", "#454543", "#666664", "#898987", "#AEAEAC", "#D4D4D2", "#EEEEEC"] },
+      "light-selected": { "role": "neutral", "displayName": "Pressed Stone", "canonical": "#ECECEA", "tonalRamp": ["#0B0B0A", "#262625", "#454543", "#666664", "#898987", "#AEAEAC", "#D4D4D2", "#EEEEEC"] },
+      "light-text": { "role": "neutral", "displayName": "Ink", "canonical": "#171717", "tonalRamp": ["#0B0B0B", "#262626", "#454545", "#666666", "#898989", "#AEAEAE", "#D4D4D4", "#EEEEEE"] },
+      "light-muted": { "role": "neutral", "displayName": "Quiet Ink", "canonical": "#6F6F6B", "tonalRamp": ["#0B0B08", "#272723", "#454542", "#666662", "#898985", "#AEAEAA", "#D4D4D0", "#EFEFEA"] },
+      "light-brand": { "role": "primary", "displayName": "Deep Coral", "canonical": "#C23F35", "tonalRamp": ["#380000", "#610000", "#890000", "#B33028", "#DD584B", "#FF7E6F", "#FFA594", "#FFC0AD"] },
+      "light-brand-soft": { "role": "primary", "displayName": "Coral Whisper", "canonical": "#FFF0ED", "tonalRamp": ["#120907", "#2E2421", "#4E4240", "#6F6360", "#938683", "#B8AAA7", "#DFD0CE", "#FAEBE8"] },
+      "light-note": { "role": "neutral", "displayName": "Note Paper", "canonical": "#F7F7F5", "tonalRamp": ["#0B0B0A", "#262625", "#454543", "#666664", "#898987", "#AEAEAC", "#D4D4D2", "#EEEEEC"] },
+      "light-note-ink": { "role": "neutral", "displayName": "Note Ink", "canonical": "#222220", "tonalRamp": ["#0B0B09", "#272724", "#454543", "#666664", "#898987", "#AEAEAB", "#D4D4D2", "#EFEFEC"] },
+      "light-divider": { "role": "neutral", "displayName": "Hairline", "canonical": "#E5E5E2", "tonalRamp": ["#0B0B09", "#272724", "#454543", "#666664", "#898986", "#AEAEAB", "#D4D4D1", "#EFEFEC"] },
+      "light-danger": { "role": "primary", "displayName": "Danger Coral", "canonical": "#C33B31", "tonalRamp": ["#3A0000", "#620000", "#8B0000", "#B52C24", "#DF5548", "#FF7C6C", "#FFA391", "#FFBEAB"] },
+      "dark-background": { "role": "neutral", "displayName": "Night Canvas", "canonical": "#0C0C0C", "tonalRamp": ["#0B0B0B", "#262626", "#454545", "#666666", "#898989", "#AEAEAE", "#D4D4D4", "#EEEEEE"] },
+      "dark-surface": { "role": "neutral", "displayName": "Night Stone", "canonical": "#1C1C1B", "tonalRamp": ["#0B0B0A", "#262625", "#454544", "#666665", "#898988", "#AEAEAD", "#D4D4D3", "#EEEEED"] },
+      "dark-selected": { "role": "neutral", "displayName": "Night Pressed Stone", "canonical": "#292927", "tonalRamp": ["#0B0B0A", "#272725", "#454543", "#666664", "#898987", "#AEAEAB", "#D4D4D2", "#EFEFEC"] },
+      "dark-text": { "role": "neutral", "displayName": "Night Ink", "canonical": "#F7F7F5", "tonalRamp": ["#0B0B0A", "#262625", "#454543", "#666664", "#898987", "#AEAEAC", "#D4D4D2", "#EEEEEC"] },
+      "dark-muted": { "role": "neutral", "displayName": "Night Quiet Ink", "canonical": "#A4A4A0", "tonalRamp": ["#0B0B09", "#272723", "#454542", "#666663", "#898985", "#AEAEAA", "#D4D4D0", "#EFEFEA"] },
+      "dark-brand": { "role": "primary", "displayName": "Bright Coral", "canonical": "#FF7265", "tonalRamp": ["#3A0000", "#620000", "#8B0000", "#B52C27", "#DF554A", "#FF7C6E", "#FFA393", "#FFBDAC"] },
+      "dark-brand-soft": { "role": "primary", "displayName": "Night Coral Whisper", "canonical": "#351B18", "tonalRamp": ["#190403", "#381E1B", "#5A3C39", "#7D5D59", "#A1807B", "#C7A4A0", "#EFCAC5", "#FFE5DF"] },
+      "dark-note": { "role": "neutral", "displayName": "Night Note Paper", "canonical": "#1A1A19", "tonalRamp": ["#0B0B0A", "#262625", "#454544", "#666665", "#898988", "#AEAEAD", "#D4D4D3", "#EEEEED"] },
+      "dark-note-ink": { "role": "neutral", "displayName": "Night Note Ink", "canonical": "#F4F4F1", "tonalRamp": ["#0B0B09", "#272724", "#454543", "#666664", "#898987", "#AEAEAB", "#D4D4D1", "#EFEFEC"] },
+      "dark-divider": { "role": "neutral", "displayName": "Night Hairline", "canonical": "#30302E", "tonalRamp": ["#0B0B0A", "#272725", "#454543", "#666664", "#898987", "#AEAEAB", "#D4D4D2", "#EFEFEC"] },
+      "dark-danger": { "role": "primary", "displayName": "Bright Danger Coral", "canonical": "#FF8178", "tonalRamp": ["#350000", "#5D0000", "#850511", "#AD3734", "#D75D56", "#FF837A", "#FFA99F", "#FFC4B8"] },
+      "on-brand": { "role": "neutral", "displayName": "On Coral", "canonical": "#FFFFFF", "tonalRamp": ["#0B0B0B", "#262626", "#454545", "#666666", "#898989", "#AEAEAE", "#D4D4D4", "#EEEEEE"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Short onboarding statements and major empty states." },
+      "title": { "displayName": "Title", "purpose": "Strong screen-level and empty-state titles." },
+      "headline": { "displayName": "Headline", "purpose": "Composer prompts and section-leading questions." },
+      "body": { "displayName": "Body", "purpose": "Captions, notes, and explanatory copy." },
+      "label": { "displayName": "Label", "purpose": "Buttons, sender names, field labels, and compact controls." },
+      "caption": { "displayName": "Caption", "purpose": "Partner context, timestamps, widgets, and tab labels." }
+    },
+    "shadows": [
+      { "name": "reaction-overlay", "value": "0 8px 20px rgba(0,0,0,0.12); Android elevation 5", "purpose": "Soft ambient separation for the transient reaction tray." },
+      { "name": "primary-float", "value": "0 6px 14px rgba(0,0,0,0.14); Android elevation 6", "purpose": "Lift for the singular center send action." }
+    ],
+    "motion": [
+      { "name": "press-feedback", "value": "90ms; scale 0.98; opacity 0.86", "purpose": "Tactile feedback for animated pressables; omit scale when reduced motion is enabled." },
+      { "name": "media-reveal", "value": "180ms", "purpose": "Short fade for image and selected-media appearance." },
+      { "name": "feed-reveal", "value": "260ms Easing.out(Easing.cubic)", "purpose": "Subtle 8px entrance for visible feed moments; instant under reduced motion." },
+      { "name": "reaction-tray", "value": "spring damping 18", "purpose": "Softly presents the temporary reaction tray." },
+      { "name": "reaction-confirm", "value": "140ms Easing.out(Easing.cubic)", "purpose": "Brief selected-emoji scale and lift before the tray dismisses." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The dominant onboarding and confirmation action.",
+      "html": "<button class=\"ds-button-primary\">Send a moment</button>",
+      "css": ".ds-button-primary { min-height: 50px; padding: 16px 24px; border: 0; border-radius: 16px; background: #C23F35; color: #FFFFFF; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 600; transition: opacity 90ms, transform 90ms; } .ds-button-primary:hover { opacity: .92; } .ds-button-primary:active { opacity: .86; transform: scale(.98); } .ds-button-primary:focus-visible { outline: 2px solid #C23F35; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "A clear secondary choice without a competing fill.",
+      "html": "<button class=\"ds-button-outline\">Continue with phone</button>",
+      "css": ".ds-button-outline { min-height: 50px; padding: 16px 24px; border: 1.5px solid #171717; border-radius: 16px; background: transparent; color: #171717; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 600; transition: opacity 90ms, transform 90ms; } .ds-button-outline:hover { background: #F5F5F3; } .ds-button-outline:active { opacity: .86; transform: scale(.98); } .ds-button-outline:focus-visible { outline: 2px solid #C23F35; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "The neutral single-line field used in onboarding.",
+      "html": "<input class=\"ds-text-field\" value=\"Your name\" aria-label=\"Your name\" />",
+      "css": ".ds-text-field { width: 100%; min-height: 56px; padding: 16px 24px; border: 1px solid #E5E5E2; border-radius: 12px; background: #F5F5F3; color: #171717; font-family: Poppins, sans-serif; font-size: 18px; } .ds-text-field:hover { border-color: #6F6F6B; } .ds-text-field:focus-visible { outline: 2px solid #C23F35; outline-offset: 1px; }"
+    },
+    {
+      "name": "Text Moment",
+      "kind": "card",
+      "description": "An inset, quiet surface that gives a private note room to breathe.",
+      "html": "<article class=\"ds-note-moment\"><p>Wish you were here for this.</p></article>",
+      "css": ".ds-note-moment { min-height: 170px; padding: 24px; border: 1px solid #E5E5E2; border-radius: 12px; background: #F7F7F5; color: #222220; display: flex; align-items: center; font-family: Poppins, sans-serif; } .ds-note-moment p { margin: 0; font-size: 21px; line-height: 30px; font-weight: 500; }"
+    },
+    {
+      "name": "Selected Reaction Chip",
+      "kind": "chip",
+      "refersTo": "reaction-chip-selected",
+      "description": "A compact record of a reaction that actually exists.",
+      "html": "<button class=\"ds-reaction-chip\" aria-label=\"Heart reaction, 1\">❤️ 1</button>",
+      "css": ".ds-reaction-chip { min-width: 44px; min-height: 32px; padding: 4px 8px; border: 1px solid #C23F35; border-radius: 999px; background: #FFF0ED; color: #C23F35; font-family: Poppins, sans-serif; font-size: 13px; } .ds-reaction-chip:hover { opacity: .86; } .ds-reaction-chip:active { transform: scale(.98); } .ds-reaction-chip:focus-visible { outline: 2px solid #C23F35; outline-offset: 2px; }"
+    },
+    {
+      "name": "Reaction Tray",
+      "kind": "custom",
+      "description": "The temporary hold-and-slide emoji chooser above a moment.",
+      "html": "<div class=\"ds-reaction-tray\" role=\"toolbar\" aria-label=\"Choose a reaction\"><button>❤️</button><button>😂</button><button>🥰</button><button>😮</button><button>😢</button></div>",
+      "css": ".ds-reaction-tray { min-height: 58px; padding: 0 8px; border: 1px solid #E5E5E2; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; box-shadow: 0 8px 20px rgba(0,0,0,.12); } .ds-reaction-tray button { min-width: 48px; min-height: 48px; border: 0; border-radius: 12px; background: transparent; font-size: 24px; transition: background 90ms, transform 140ms; } .ds-reaction-tray button:hover { background: #FFF0ED; } .ds-reaction-tray button:active { transform: translateY(-7px) scale(1.55); } .ds-reaction-tray button:focus-visible { outline: 2px solid #C23F35; outline-offset: -2px; }"
+    },
+    {
+      "name": "App Navigation",
+      "kind": "nav",
+      "description": "A flat two-destination tab bar organized around the lifted send action.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary\"><button class=\"ds-nav-item ds-active\">⌂<span>Home</span></button><button class=\"ds-send\" aria-label=\"Send a moment\">+</button><button class=\"ds-nav-item\">○<span>Profile</span></button></nav>",
+      "css": ".ds-nav { min-height: 64px; padding: 8px 24px; border-top: 1px solid #E5E5E2; background: #FFFFFF; display: flex; align-items: flex-start; justify-content: space-around; font-family: Poppins, sans-serif; } .ds-nav-item { flex: 1; min-height: 52px; border: 0; background: transparent; color: #6F6F6B; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 23px; } .ds-nav-item span { font-size: 11px; line-height: 16px; } .ds-nav-item.ds-active { color: #C23F35; } .ds-nav-item:focus-visible, .ds-send:focus-visible { outline: 2px solid #C23F35; outline-offset: 2px; } .ds-send { width: 56px; height: 56px; margin-top: -18px; border: 1px solid #C23F35; border-radius: 999px; background: #C23F35; color: #FFFFFF; font-size: 28px; box-shadow: 0 6px 14px rgba(0,0,0,.14); } .ds-send:hover { opacity: .9; } .ds-send:active { opacity: .78; }"
+    },
+    {
+      "name": "Latest Moment Widget",
+      "kind": "custom",
+      "description": "The Android media widget with a bounded camera shortcut beside sender metadata.",
+      "html": "<article class=\"ds-moment-widget\"><div class=\"ds-widget-media\"></div><footer><div class=\"ds-widget-row\"><span>Avery · just now</span><a href=\"#send-sheet-camera\" aria-label=\"Open camera to send a moment\">+</a></div><p>Wish you were here.</p><button>❤️</button></footer></article>",
+      "css": ".ds-moment-widget { width: 180px; height: 240px; border-radius: 20px; background: #FFFFFF; color: #222220; overflow: hidden; font-family: Poppins, sans-serif; display: flex; flex-direction: column; } .ds-widget-media { flex: 1; background: #F7F7F5; } .ds-moment-widget footer { padding: 8px; } .ds-widget-row { height: 42px; display: flex; align-items: center; justify-content: space-between; color: #6F6F6B; font-size: 11px; } .ds-widget-row a { width: 42px; height: 42px; border-radius: 999px; background: #C23F35; color: #FFFFFF; display: grid; place-items: center; text-decoration: none; font-size: 28px; font-weight: 500; } .ds-moment-widget p { margin: 3px 0 4px; font-size: 12px; font-weight: 500; } .ds-moment-widget button { padding: 4px; border: 0; border-radius: 12px; background: #F5F5F3; font-size: 12px; } .ds-widget-row a:hover, .ds-moment-widget button:hover { opacity: .9; } .ds-widget-row a:active, .ds-moment-widget button:active { opacity: .82; } .ds-widget-row a:focus-visible, .ds-moment-widget button:focus-visible { outline: 2px solid #C23F35; outline-offset: 2px; }"
+    },
+    {
+      "name": "Quick Send Widget",
+      "kind": "custom",
+      "description": "The Android home-screen shortcut that opens the native Send sheet.",
+      "html": "<a class=\"ds-quick-widget\" href=\"#send-sheet-camera\" aria-label=\"Open camera to send a moment\"><strong>+</strong><span>Send a moment</span></a>",
+      "css": ".ds-quick-widget { width: 160px; height: 160px; padding: 12px; border-radius: 20px; background: #C23F35; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; font-family: Poppins, sans-serif; } .ds-quick-widget strong { font-size: 32px; font-weight: 500; } .ds-quick-widget span { margin-top: 2px; font-size: 12px; font-weight: 600; } .ds-quick-widget:hover { opacity: .92; } .ds-quick-widget:active { opacity: .86; } .ds-quick-widget:focus-visible { outline: 2px solid #C23F35; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Private Photo Note",
+    "overview": "Moments should feel like a photo or tiny note placed directly into one loved person's hand. The interface borrows the immediate legibility and media confidence of Instagram, then removes public-social density: no metrics, ornamental chrome, or competing calls to action. Photos and personal words are the content; the interface stays quiet around them.\n\nThe mood is intimate, calm, cute, and grown-up. Friendly Poppins typography, centered titles, neutral surfaces, and a single deep coral interaction color create warmth without turning the app into a scrapbook. Controls are familiar and native, while the large center send action and gesture-led reaction tray give the product a recognizable rhythm of its own.",
+    "keyCharacteristics": [
+      "Media-first composition with full-width square photos and restrained context.",
+      "Flat white or near-neutral surfaces separated by hairlines and tonal shifts.",
+      "One accessible deep coral action color, supported by a pale coral selected state.",
+      "Friendly Poppins typography with minimal centered titles.",
+      "Spacious, centered onboarding with one dominant decision at a time.",
+      "Native sheets and platform symbols for focused actions.",
+      "Reactions stay hidden until relevant; only reactions that exist remain visible."
+    ],
+    "rules": [
+      { "name": "The One Coral Rule", "body": "Deep coral is the only general interaction accent. Do not introduce competing blues, purples, or decorative gradients.", "section": "colors" },
+      { "name": "The Media Keeps Its Color Rule", "body": "The interface stays chromatically restrained so shared photos remain the richest color on the screen.", "section": "colors" },
+      { "name": "The Friendly Restraint Rule", "body": "Keep titles short and use bold Poppins sparingly; long explanatory copy stays regular weight and secondary color.", "section": "typography" },
+      { "name": "The Centered Title Rule", "body": "Center brand headers and spacious onboarding titles. Keep operational content, captions, and form labels left aligned.", "section": "typography" },
+      { "name": "The One-Handed Send Rule", "body": "Keep the center send action prominent and keep composer decisions vertically ordered for quick thumb reach.", "section": "layout" },
+      { "name": "The Flat-by-Default Rule", "body": "If a surface persists at rest, prefer tonal contrast or a hairline. Shadows belong to temporary overlays and the singular floating send action.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do let shared photos and notes occupy the visual center of gravity.",
+      "Do use Deep Coral for primary action, active state, the heart reaction, and brand marks.",
+      "Do keep headers minimal and centered, then align operational content for fast scanning.",
+      "Do use native sheets, safe areas, platform symbols, and accessible 44–48px touch targets.",
+      "Do keep onboarding centered, spacious, and limited to one primary decision per screen.",
+      "Do provide a tap and accessibility alternative wherever hold-and-slide reveals reactions.",
+      "Do keep widgets visually consistent with the in-app moment and route their send actions through the Send sheet's one-time camera launch."
+    ],
+    "donts": [
+      "Don't add public-social metrics, engagement counters, follower language, or feed chrome.",
+      "Don't introduce competing accent colors, decorative gradients, or scrapbook ornament.",
+      "Don't wrap full-width photos in floating cards or persistent shadows.",
+      "Don't show an empty reaction row; reactions appear only after someone adds them.",
+      "Don't use pills for ordinary fields and containers; reserve them for reactions and compact controls.",
+      "Don't let custom motion override native navigation, sheet behavior, or reduced-motion preferences."
+    ]
+  }
+}

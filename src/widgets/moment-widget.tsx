@@ -8,15 +8,6 @@ import type { ImageWidgetSource } from 'react-native-android-widget';
 import { Brand } from '@/constants/theme';
 import type { WidgetMoment } from '@/lib/widget-cache';
 
-function timeAgo(iso: string) {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
 export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
   if (!moment) {
     return (
@@ -65,6 +56,11 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
     ),
   ];
 
+  const badges: { key: string; icon: string; label: string }[] = [];
+  if (moment.isVideo) badges.push({ key: 'video', icon: '▶', label: 'Video' });
+  if (moment.trackTitle) badges.push({ key: 'track', icon: '🎵', label: moment.trackTitle });
+  const badgeWidth = badges.length > 1 ? 55 : 80;
+
   return (
     <FlexWidget
       clickAction="OPEN_APP"
@@ -106,7 +102,7 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
         style={{
           width: 'match_parent',
           paddingHorizontal: 10,
-          paddingVertical: 8,
+          paddingVertical: 4,
           backgroundColor: '#FFFFFF',
           flexDirection: 'column',
         }}>
@@ -115,27 +111,38 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
             text={moment.text}
             maxLines={2}
             truncate="END"
-            style={{ fontSize: 12, color: '#222220', fontWeight: '500', marginBottom: 6 }}
+            style={{ fontSize: 12, color: '#222220', fontWeight: '500', marginBottom: 3 }}
           />
         ) : null}
         <FlexWidget
           style={{
             width: 'match_parent',
-            height: 40,
             flexDirection: 'row',
             alignItems: 'center',
           }}>
-          <FlexWidget style={{ flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
-            <TextWidget
-              text={moment.senderName}
-              maxLines={1}
-              truncate="END"
-              style={{ fontSize: 12, color: '#222220', fontWeight: '600' }}
-            />
-            <TextWidget
-              text={timeAgo(moment.createdAt)}
-              style={{ fontSize: 10, color: '#6F6F6B', marginTop: 1 }}
-            />
+          <FlexWidget style={{ flex: 1, flexDirection: 'row', flexGap: 4 }}>
+            {badges.map((badge) => (
+              <FlexWidget
+                key={badge.key}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  width: badgeWidth,
+                  overflow: 'hidden',
+                  backgroundColor: '#F5F5F3',
+                  borderRadius: 10,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                }}>
+                <TextWidget text={badge.icon} style={{ fontSize: 10, marginRight: 4 }} />
+                <TextWidget
+                  text={badge.label}
+                  maxLines={1}
+                  truncate="END"
+                  style={{ fontSize: 10, color: '#6F6F6B', fontWeight: '600' }}
+                />
+              </FlexWidget>
+            ))}
           </FlexWidget>
           <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', flexGap: 6 }}>
             <FlexWidget
@@ -146,9 +153,9 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
                 pairId: moment.pairId,
               }}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 34,
+                height: 34,
+                borderRadius: 17,
                 backgroundColor: primaryReaction.mine ? '#FFF0ED' : '#F5F5F3',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -160,28 +167,28 @@ export function MomentWidget({ moment }: { moment: WidgetMoment | null }) {
                     : primaryReaction.emoji
                 }
                 style={{
-                  fontSize: primaryReaction.count > 0 ? 12 : 17,
+                  fontSize: primaryReaction.count > 0 ? 11 : 15,
                   color: Brand.gradientStart,
                 }}
               />
             </FlexWidget>
             <FlexWidget
               clickAction="OPEN_URI"
-              clickActionData={{ uri: 'homescreennotifiers://send-sheet?camera=1' }}
+              clickActionData={{ uri: 'homescreennotifiers://camera' }}
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
+                width: 34,
+                height: 34,
+                borderRadius: 17,
                 backgroundColor: Brand.gradientStart,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-              <TextWidget text="+" style={{ fontSize: 25, color: '#FFFFFF', fontWeight: '500' }} />
+              <TextWidget text="+" style={{ fontSize: 21, color: '#FFFFFF', fontWeight: '500' }} />
             </FlexWidget>
           </FlexWidget>
         </FlexWidget>
         {visibleReactions.length > 1 ? (
-          <FlexWidget style={{ flexDirection: 'row', flexGap: 4, marginTop: 6 }}>
+          <FlexWidget style={{ flexDirection: 'row', flexGap: 4, marginTop: 3 }}>
             {visibleReactions.slice(1).map((reaction) => (
               <FlexWidget
                 key={reaction.emoji}

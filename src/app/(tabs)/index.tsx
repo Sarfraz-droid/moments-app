@@ -2,36 +2,32 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { MotiView } from 'moti';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, useWindowDimensions, View, type ViewToken } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, useWindowDimensions, View, type ViewToken } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Easing, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedPressable } from '@/components/animated-pressable';
+import { Avatar } from '@/components/avatar';
 import { BrandHeader } from '@/components/brand-header';
+import { Lightbox } from '@/components/lightbox';
 import { Logo } from '@/components/logo';
+import { MomentVideo, type MomentVideoHandle } from '@/components/moment-video';
+import { MusicBadge } from '@/components/music-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Radii, Spacing } from '@/constants/theme';
+import { useComments } from '@/hooks/use-comments';
 import { useMoments } from '@/hooks/use-moments';
 import { useReactions } from '@/hooks/use-reactions';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { REACTION_EMOJIS } from '@/lib/reactions';
-import { getMomentPhotoUrl } from '@/lib/storage';
+import { getMomentPhotoUrl, getMomentVideoUri } from '@/lib/storage';
+import { timeAgo } from '@/lib/time';
 import type { Moment, MomentReaction } from '@/lib/types';
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'Now';
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
-}
 
 function dayLabel(iso: string) {
   const date = new Date(iso);
@@ -43,21 +39,6 @@ function dayLabel(iso: string) {
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return date.toLocaleDateString(undefined, { weekday: 'long' });
   return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
-}
-
-function Avatar({ name, mine }: { name: string; mine: boolean }) {
-  const theme = useTheme();
-  return (
-    <View
-      style={[
-        styles.avatar,
-        { backgroundColor: mine ? theme.brandSoft : theme.backgroundSelected },
-      ]}>
-      <ThemedText style={[styles.avatarText, { color: mine ? theme.brand : theme.text }]}>
-        {(name || '?').trim().charAt(0).toUpperCase()}
-      </ThemedText>
-    </View>
-  );
 }
 
 function ReactionSummary({
@@ -158,6 +139,9 @@ function MomentCard({
   userId,
   reactions,
   onToggleReaction,
+  onOpenLightbox,
+  commentCount,
+  isVisible,
 }: {
   moment: Moment;
   isMe: boolean;
@@ -165,29 +149,46 @@ function MomentCard({
   userId: string | undefined;
   reactions: MomentReaction[];
   onToggleReaction: (momentId: string, emoji: string) => void;
+  onOpenLightbox: (url: string) => void;
+  commentCount: number;
+  isVisible: boolean;
 }) {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
   const { width } = useWindowDimensions();
   const [url, setUrl] = useState<string | null>(null);
+  const [photoLoading, setPhotoLoading] = useState(true);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const trayWidth = Math.min(width - Spacing.four, 336);
+  const videoRef = useRef<MomentVideoHandle>(null);
 
   useEffect(() => {
     let cancelled = false;
     if (!moment.storage_path) return;
-    getMomentPhotoUrl(moment.storage_path)
-      .then((nextUrl) => !cancelled && setUrl(nextUrl))
-      .catch(() => !cancelled && setUrl(null));
+    const resolveUrl =
+      moment.type === 'video'
+        ? getMomentVideoUri(moment.storage_path, moment.id)
+        : getMomentPhotoUrl(moment.storage_path);
+    resolveUrl.then((nextUrl) => !cancelled && setUrl(nextUrl)).catch(() => !cancelled && setUrl(null));
     return () => {
       cancelled = true;
     };
-  }, [moment.storage_path]);
+  }, [moment.storage_path, moment.id, moment.type]);
 
-  const hasPhoto = Boolean(moment.storage_path);
+  const [showHeartBurst, setShowHeartBurst] = useState(false);
+
+  const isVideo = moment.type === 'video';
+  const hasPhoto = Boolean(moment.storage_path) && !isVideo;
   const hasText = Boolean(moment.text?.trim());
   const myReaction = reactions.find((reaction) => reaction.user_id === userId);
   const hasMyHeart = myReaction?.emoji === '❤️';
+
+  useEffect(() => {
+    if (!showHeartBurst) return;
+    const timer = setTimeout(() => setShowHeartBurst(false), 700);
+    return () => clearTimeout(timer);
+  }, [showHeartBurst]);
 
   const chooseReaction = useCallback((emoji: string) => {
     onToggleReaction(moment.id, emoji);
@@ -232,6 +233,50 @@ function MomentCard({
     [beginReactionGesture, cancelReactionGesture, finishReactionGesture, moveReactionGesture]
   );
 
+  // Video has no lightbox (it already autoplays full-size in the feed), so a
+  // single tap there toggles play/pause instead — routed through this
+  // GestureDetector rather than a nested Pressable inside MomentVideo, since
+  // mixing react-native-gesture-handler with the built-in touch responder
+  // system in the same subtree is unreliable.
+  const handleSingleTap = useCallback(() => {
+    if (hasPhoto && url) onOpenLightbox(url);
+    else if (isVideo) videoRef.current?.togglePlay();
+  }, [hasPhoto, isVideo, onOpenLightbox, url]);
+
+  // Instagram-style: double-tap always likes (never removes the heart via
+  // double tap, only the heart button toggles it) and shows a heart burst;
+  // a plain single tap opens the lightbox, delayed via
+  // requireExternalGestureToFail so it doesn't fire ahead of a double tap.
+  const handleDoubleTapLike = useCallback(() => {
+    setShowHeartBurst(true);
+    if (!hasMyHeart) onToggleReaction(moment.id, '❤️');
+  }, [hasMyHeart, moment.id, onToggleReaction]);
+
+  // handleSingleTap only reads videoRef.current when the gesture actually
+  // fires (inside runOnJS), never during render — same established pattern
+  // as in-app-camera.tsx's shutter gesture.
+  /* eslint-disable react-hooks/refs */
+  const mediaGesture = useMemo(() => {
+    const doubleTap = Gesture.Tap()
+      .numberOfTaps(2)
+      .maxDuration(250)
+      .onEnd((_event, success) => {
+        if (success) runOnJS(handleDoubleTapLike)();
+      });
+    const singleTap = Gesture.Tap()
+      .numberOfTaps(1)
+      .maxDuration(250)
+      .requireExternalGestureToFail(doubleTap)
+      .onEnd((_event, success) => {
+        if (success) runOnJS(handleSingleTap)();
+      });
+    const longPress = Gesture.LongPress()
+      .minDuration(260)
+      .onStart(() => runOnJS(setPickerVisible)(true));
+    return Gesture.Race(longPress, Gesture.Exclusive(doubleTap, singleTap));
+  }, [handleDoubleTapLike, handleSingleTap]);
+  /* eslint-enable react-hooks/refs */
+
   return (
     <View style={[styles.moment, { borderBottomColor: theme.divider }]}>
       <View style={styles.momentHeader}>
@@ -244,27 +289,97 @@ function MomentCard({
         </View>
       </View>
 
-      <Pressable
-        accessibilityActions={[{ name: 'activate', label: 'Show reactions' }]}
-        accessibilityHint="Long press to react"
-        accessibilityLabel={`${isMe ? 'Your' : `${senderName}'s`} moment`}
-        delayLongPress={260}
-        onAccessibilityAction={() => setPickerVisible(true)}
-        onLongPress={() => setPickerVisible(true)}>
-        {hasPhoto ? (
-          url ? (
-            <Image source={{ uri: url }} style={styles.photo} contentFit="cover" transition={180} />
-          ) : (
-            <View style={[styles.photo, { backgroundColor: theme.backgroundElement }]} />
-          )
-        ) : (
-          <View style={[styles.noteMoment, { backgroundColor: theme.note, borderColor: theme.divider }]}>
-            <ThemedText style={[styles.noteText, { color: theme.noteInk }]}>{moment.text}</ThemedText>
+      <View style={styles.mediaWrap}>
+        <GestureDetector gesture={mediaGesture}>
+          <MotiView
+            animate={{
+              scale: pickerVisible && !reducedMotion ? 0.985 : 1,
+              opacity: pickerVisible ? 0.94 : 1,
+            }}
+            transition={{
+              type: 'timing',
+              duration: reducedMotion ? 0 : pickerVisible ? 180 : 140,
+              easing: Easing.bezier(0.16, 1, 0.3, 1),
+            }}
+            accessibilityActions={[{ name: 'activate', label: 'Show reactions' }]}
+            accessibilityHint="Double tap to like, tap to expand, long press to react"
+            accessibilityLabel={`${isMe ? 'Your' : `${senderName}'s`} moment`}
+            accessibilityRole="button"
+            onAccessibilityAction={() => setPickerVisible(true)}>
+            {isVideo ? (
+              url ? (
+                <MotiView
+                  from={{ opacity: reducedMotion ? 1 : 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ type: 'timing', duration: reducedMotion ? 0 : 180 }}
+                  style={styles.photo}>
+                  <MomentVideo ref={videoRef} uri={url} isVisible={isVisible} style={styles.photo} />
+                </MotiView>
+              ) : (
+                <View style={[styles.photo, styles.mediaLoading, { backgroundColor: theme.backgroundElement }]}>
+                  <ActivityIndicator color={theme.textSecondary} />
+                </View>
+              )
+            ) : hasPhoto ? (
+              url ? (
+                <View style={[styles.photo, styles.photoFrame]}>
+                  <Image
+                    source={{ uri: url }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={180}
+                    cachePolicy="memory-disk"
+                    priority={isVisible ? 'high' : 'normal'}
+                    recyclingKey={moment.id}
+                    onLoadStart={() => setPhotoLoading(true)}
+                    onLoad={() => setPhotoLoading(false)}
+                    onError={() => setPhotoLoading(false)}
+                  />
+                  {photoLoading ? (
+                    <View pointerEvents="none" style={[styles.mediaLoading, styles.mediaLoadingOverlay]}>
+                      <ActivityIndicator color="#FFFFFF" />
+                    </View>
+                  ) : null}
+                </View>
+              ) : (
+                <View style={[styles.photo, styles.mediaLoading, { backgroundColor: theme.backgroundElement }]}>
+                  <ActivityIndicator color={theme.textSecondary} />
+                </View>
+              )
+            ) : (
+              <View style={[styles.noteMoment, { backgroundColor: theme.note, borderColor: theme.divider }]}>
+                <ThemedText style={[styles.noteText, { color: theme.noteInk }]}>{moment.text}</ThemedText>
+              </View>
+            )}
+          </MotiView>
+        </GestureDetector>
+        {showHeartBurst ? (
+          <View pointerEvents="none" style={styles.heartBurstWrap}>
+            <MotiView
+              from={{ opacity: 0, scale: reducedMotion ? 1 : 0.4 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: reducedMotion ? 1 : [0.4, 1.15, 1, 1] }}
+              transition={{ type: 'timing', duration: reducedMotion ? 0 : 650 }}>
+              <SymbolView
+                name={{ ios: 'heart.fill', android: 'favorite', web: 'favorite' }}
+                size={84}
+                tintColor="#FFFFFF"
+                fallback={<ThemedText style={styles.heartBurstFallback}>❤️</ThemedText>}
+              />
+            </MotiView>
           </View>
-        )}
-      </Pressable>
+        ) : null}
+        {moment.youtube_video_id ? (
+          <MusicBadge
+            videoId={moment.youtube_video_id}
+            title={moment.track_title ?? 'Track'}
+            thumbnailUrl={moment.track_thumbnail_url}
+            startSeconds={moment.track_start_seconds}
+            isVisible={isVisible}
+          />
+        ) : null}
+      </View>
 
-      {hasPhoto && hasText ? <ThemedText style={styles.caption}>{moment.text}</ThemedText> : null}
+      {(hasPhoto || isVideo) && hasText ? <ThemedText style={styles.caption}>{moment.text}</ThemedText> : null}
 
       <View style={styles.reactionDock}>
         {pickerVisible ? (
@@ -303,6 +418,22 @@ function MomentCard({
               )}
             </Pressable>
           </GestureDetector>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={commentCount > 0 ? `${commentCount} comments` : 'Comment on this moment'}
+            hitSlop={10}
+            onPress={() => router.push({ pathname: '/comments-sheet', params: { momentId: moment.id } })}
+            style={styles.commentButton}>
+            <SymbolView
+              name={{ ios: 'bubble.right', android: 'chat_bubble_outline', web: 'chat_bubble_outline' }}
+              size={20}
+              tintColor={theme.textSecondary}
+              fallback={<ThemedText type="small">Comment</ThemedText>}
+            />
+            {commentCount > 0 ? (
+              <ThemedText type="small" themeColor="textSecondary">{commentCount}</ThemedText>
+            ) : null}
+          </Pressable>
           <ReactionSummary reactions={reactions} userId={userId} onToggle={chooseReaction} />
         </View>
       </View>
@@ -329,8 +460,9 @@ export default function FeedScreen() {
   const theme = useTheme();
   const { moments, loading, refresh } = useMoments(pair?.id);
   const { reactions, react } = useReactions(pair?.id);
-  const reducedMotion = useReducedMotion();
+  const { comments } = useComments(pair?.id);
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<FeedRow>[] }) => {
       setVisibleKeys(new Set(viewableItems.map(({ item }) => item.key)));
@@ -355,6 +487,24 @@ export default function FeedScreen() {
     return rows;
   }, [moments]);
 
+  const reactionsByMoment = useMemo(() => {
+    const grouped = new Map<string, MomentReaction[]>();
+    for (const reaction of reactions) {
+      const current = grouped.get(reaction.moment_id);
+      if (current) current.push(reaction);
+      else grouped.set(reaction.moment_id, [reaction]);
+    }
+    return grouped;
+  }, [reactions]);
+
+  const commentCountByMoment = useMemo(() => {
+    const grouped = new Map<string, number>();
+    for (const comment of comments) {
+      grouped.set(comment.moment_id, (grouped.get(comment.moment_id) ?? 0) + 1);
+    }
+    return grouped;
+  }, [comments]);
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -370,9 +520,15 @@ export default function FeedScreen() {
           contentContainerStyle={[styles.listContent, flatData.length === 0 && styles.emptyList]}
           onRefresh={refresh}
           refreshing={loading}
+          progressViewOffset={8}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={FEED_VIEWABILITY_CONFIG}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          initialNumToRender={5}
+          maxToRenderPerBatch={3}
+          updateCellsBatchingPeriod={50}
+          windowSize={7}
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyWrap}>
@@ -382,7 +538,7 @@ export default function FeedScreen() {
                   Send a photo or note to {partnerName}. It will appear here and on their home screen.
                 </ThemedText>
                 <AnimatedPressable
-                  onPress={() => router.push('/send-sheet')}
+                  onPress={() => router.push('/camera')}
                   style={styles.emptyAction}>
                   <ThemedText type="smallBold" style={styles.emptyActionText}>Send a moment</ThemedText>
                 </AnimatedPressable>
@@ -392,42 +548,29 @@ export default function FeedScreen() {
           renderItem={({ item }) => {
             const visible = visibleKeys.size === 0 || visibleKeys.has(item.key);
             if (item.type === 'section') {
-              return (
-                <MotiView
-                  animate={{ opacity: visible || reducedMotion ? 1 : 0.25 }}
-                  transition={{ type: 'timing', duration: reducedMotion ? 0 : 180 }}>
-                  <SectionLabel label={item.label} />
-                </MotiView>
-              );
+              return <SectionLabel label={item.label} />;
             }
             const moment = item.moment;
             const isMe = moment.sender_id === session?.user.id;
             return (
-              <MotiView
-                animate={{
-                  opacity: visible || reducedMotion ? 1 : 0.18,
-                  translateY: visible || reducedMotion ? 0 : 8,
+              <MomentCard
+                moment={moment}
+                isMe={isMe}
+                senderName={isMe ? myName : partnerName}
+                userId={session?.user.id}
+                reactions={reactionsByMoment.get(moment.id) ?? []}
+                onToggleReaction={(momentId, emoji) => {
+                  if (session) react(momentId, session.user.id, emoji);
                 }}
-                transition={{
-                  type: 'timing',
-                  duration: reducedMotion ? 0 : visible ? 260 : 180,
-                  easing: Easing.out(Easing.cubic),
-                }}>
-                <MomentCard
-                  moment={moment}
-                  isMe={isMe}
-                  senderName={isMe ? myName : partnerName}
-                  userId={session?.user.id}
-                  reactions={reactions.filter((reaction) => reaction.moment_id === moment.id)}
-                  onToggleReaction={(momentId, emoji) => {
-                    if (session) react(momentId, session.user.id, emoji);
-                  }}
-                />
-              </MotiView>
+                onOpenLightbox={setLightboxUrl}
+                commentCount={commentCountByMoment.get(moment.id) ?? 0}
+                isVisible={visible}
+              />
             );
           }}
         />
       </SafeAreaView>
+      <Lightbox uri={lightboxUrl} onClose={() => setLightboxUrl(null)} />
     </ThemedView>
   );
 }
@@ -458,17 +601,19 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  senderBlock: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.two },
+  timeText: { fontSize: 12 },
+  mediaWrap: { position: 'relative' },
+  heartBurstWrap: {
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 14, fontWeight: '800' },
-  senderBlock: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.two },
-  timeText: { fontSize: 12 },
+  heartBurstFallback: { fontSize: 72 },
   photo: { width: '100%', aspectRatio: 1 },
+  photoFrame: { position: 'relative', overflow: 'hidden' },
+  mediaLoading: { alignItems: 'center', justifyContent: 'center' },
+  mediaLoadingOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.15)' },
   noteMoment: {
     minHeight: 170,
     marginHorizontal: Spacing.three,
@@ -505,6 +650,14 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  commentButton: {
+    minHeight: 44,
+    minWidth: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   reactionTray: {
     position: 'absolute',

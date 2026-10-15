@@ -1,11 +1,14 @@
 import { SymbolView } from 'expo-symbols';
 import { router } from 'expo-router';
 import { TabList, TabSlot, Tabs, TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
+import { MotiView } from 'moti';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useTheme } from '@/hooks/use-theme';
 
 type TabKind = 'home' | 'profile';
@@ -42,13 +45,19 @@ export default function AppTabs() {
 
 function SendButton() {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
   return (
     <Pressable
       accessibilityLabel="Send a moment"
       accessibilityRole="button"
-      onPress={() => router.push('/send-sheet')}
-      style={({ pressed }) => [styles.sendHitArea, pressed && styles.pressed]}>
-      <View
+      onPress={() => router.push('/camera')}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={styles.sendHitArea}>
+      <MotiView
+        animate={{ scale: reducedMotion ? 1 : pressed ? 0.92 : 1, translateY: pressed && !reducedMotion ? 2 : 0 }}
+        transition={{ type: 'timing', duration: reducedMotion ? 0 : 110 }}
         style={[
           styles.sendButton,
           { backgroundColor: theme.brand, borderColor: theme.brand },
@@ -58,13 +67,15 @@ function SendButton() {
           size={28}
           tintColor="#FFFFFF"
         />
-      </View>
+      </MotiView>
     </Pressable>
   );
 }
 
 function TabButton({ kind, label, isFocused, ...props }: TabTriggerSlotProps & { kind: TabKind; label: string }) {
   const theme = useTheme();
+  const reducedMotion = useReducedMotion();
+  const [pressed, setPressed] = useState(false);
 
   const isHome = kind === 'home';
   return (
@@ -73,29 +84,40 @@ function TabButton({ kind, label, isFocused, ...props }: TabTriggerSlotProps & {
       accessibilityLabel={label}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
-      style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
-      <SymbolView
-        name={
-          isHome
-            ? {
-                ios: isFocused ? 'house.fill' : 'house',
-                android: 'home',
-                web: 'home',
-              }
-            : {
-                ios: isFocused ? 'person.crop.circle.fill' : 'person.crop.circle',
-                android: 'account_circle',
-                web: 'account_circle',
-              }
-        }
-        size={23}
-        tintColor={isFocused ? theme.brand : theme.textSecondary}
-      />
-      <ThemedText
-        type="small"
-        style={[styles.tabLabel, { color: isFocused ? theme.brand : theme.textSecondary }]}>
-        {label}
-      </ThemedText>
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={styles.tabButton}>
+      <MotiView
+        animate={{
+          opacity: pressed ? 0.72 : 1,
+          scale: reducedMotion ? 1 : pressed ? 0.9 : isFocused ? 1.06 : 1,
+          translateY: isFocused && !reducedMotion ? -1 : 0,
+        }}
+        transition={{ type: 'timing', duration: reducedMotion ? 0 : 140 }}
+        style={styles.tabContent}>
+        <SymbolView
+          name={
+            isHome
+              ? {
+                  ios: isFocused ? 'house.fill' : 'house',
+                  android: 'home',
+                  web: 'home',
+                }
+              : {
+                  ios: isFocused ? 'person.crop.circle.fill' : 'person.crop.circle',
+                  android: 'account_circle',
+                  web: 'account_circle',
+                }
+          }
+          size={23}
+          tintColor={isFocused ? theme.brand : theme.textSecondary}
+        />
+        <ThemedText
+          type="small"
+          style={[styles.tabLabel, { color: isFocused ? theme.brand : theme.textSecondary }]}>
+          {label}
+        </ThemedText>
+      </MotiView>
     </Pressable>
   );
 }
@@ -114,6 +136,10 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabContent: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 1,
@@ -139,5 +165,4 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 6,
   },
-  pressed: { opacity: 0.78 },
 });
